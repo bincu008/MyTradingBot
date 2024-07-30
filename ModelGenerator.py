@@ -4,9 +4,10 @@ import numpy as np
 import yfinance as yf
 import pickle
 import IndicatorCalculator as IC
-from sklearn.model_selection import train_test_split
+import tensorflow as tf
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
+from sklearn.preprocessing import MinMaxScaler
 
 signal_trigger = 0.2 # percentage of price change
 compare_period = -10
@@ -70,6 +71,8 @@ def GenerateModel(train_data):
     #train_data_increase = pd.read_csv(sample_increase_path)
     #train_data_decrease = pd.read_csv(sample_decrease_path)
 
+    # ======================== generating Logistic Regression Model ========================
+
     # Split data into train and test sets
 
     X = train_data[IC.input_to_model]
@@ -88,10 +91,9 @@ def GenerateModel(train_data):
     y_pred = model.predict(X_test)
     accuracy = (y_pred == y_test).mean()
     print(classification_report(y_test, y_pred))
-    print(f"Increase Model Accuracy: {accuracy:.2f}")
+    print(f"Logistic Regression Model Accuracy: {accuracy:.2f}")
 
-    test_data['Singal_predict'] = y_pred
-    test_data.to_csv(sample_path, sep=",")
+    
 
     # decrease model
     #Xd = train_data_decrease[["EMA20","EMA50", "EMA200", "RSI"]]
@@ -109,6 +111,49 @@ def GenerateModel(train_data):
 
     #with open(output_buy_model, 'wb') as file:
     #    pickle.dump(model_i, file)
+
+    # ======================== generating LSTM Model ========================
+    features = train_data[IC.input_to_model].values
+    # Normalize features to [0, 1] range
+    scaler = MinMaxScaler()
+    scaled_features = scaler.fit_transform(features)
+    
+    sequence_length = 30
+    X, y = [], []
+    for i in range(len(scaled_features) - sequence_length):
+        X.append(scaled_features[i : i + sequence_length])
+        y.append(scaled_features[i + sequence_length])
+
+    X, y = np.array(X), np.array(y)
+
+    # repeat for test data
+    features = test_data[IC.input_to_model].values
+    # Normalize features to [0, 1] range
+    scaler = MinMaxScaler()
+    scaled_features = scaler.fit_transform(features)
+    
+    sequence_length = 30
+    X_test, y_test = [], []
+    for i in range(len(scaled_features) - sequence_length):
+        X_test.append(scaled_features[i : i + sequence_length])
+        y_test.append(scaled_features[i + sequence_length])
+
+    X, y = np.array(X), np.array(y)
+
+    model_LSTM = tf.keras.Sequential([
+    tf.keras.layers.LSTM(64, activation='relu', input_shape=(X.shape[1], X.shape[2])),
+    tf.keras.layers.Dense(1)  # Output dimension matches the number of features (buy, sell, do nothing)
+    ])
+
+    model_LSTM.compile(optimizer='adam', loss='mean_squared_error')
+    
+    model_LSTM.fit(X, y, shuffle = False, epochs=50, batch_size=32)
+    loss = model.evaluate(X_test, y_test)
+    print(f"LSTM test Loss: {loss:.4f}")
+
+
+    test_data['Singal_predict_regress'] = y_pred
+    test_data.to_csv(sample_path, sep=",")
 
     with open(out_put_model, 'wb') as file:
         pickle.dump(model, file)
