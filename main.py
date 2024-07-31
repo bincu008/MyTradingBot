@@ -34,14 +34,14 @@ if __name__ == "__main__":
     date_from = date_.replace() #(hour=0, minute=0, second=0, microsecond=0)
     date_to = noww
     
-    date_from_train = noww - timedelta(days = 210)
+    date_from_train = noww - timedelta(days = 90)
     date_to_train = noww - timedelta(days = 30)
 
     if (generate_model):
-        train_data = pd.DataFrame(MT5.copy_rates_range("GOLD#", MT5.TIMEFRAME_M5, date_from_train, date_to_train))
+        train_data = pd.DataFrame(MT5.copy_rates_range("GOLD#", MT5.TIMEFRAME_M3, date_from_train, date_to_train))
         MG.GenerateModel(train_data)
     elif (not os.path.isfile(MG.output_sell_model) or not os.path.isfile(MG.output_buy_model)):
-        train_data = pd.DataFrame(MT5.copy_rates_range("GOLD#", MT5.TIMEFRAME_M5, date_from_train, date_to_train))
+        train_data = pd.DataFrame(MT5.copy_rates_range("GOLD#", MT5.TIMEFRAME_M3, date_from_train, date_to_train))
         MG.GenerateModel(train_data)
     
     with open(MG.out_put_model, 'rb') as file:
@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
         # request 1000 ticks from EURAUD
         now = datetime.now()
-        gold_ticks = pd.DataFrame(MT5.copy_rates_range("GOLD#", MT5.TIMEFRAME_M5, date_from, date_to))
+        gold_ticks = pd.DataFrame(MT5.copy_rates_range("GOLD#", MT5.TIMEFRAME_M3, date_from, date_to))
         gold_ticks = IC.IndicatorCalculator(gold_ticks, "data")
         gold_ticks.to_csv(mg.real_data_path)
 
