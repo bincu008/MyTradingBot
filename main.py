@@ -38,11 +38,13 @@ if __name__ == "__main__":
     date_to_train = noww - timedelta(days = 30)
 
     if (generate_model):
-        train_data = pd.DataFrame(MT5.copy_rates_range("GOLD#", MT5.TIMEFRAME_M3, date_from_train, date_to_train))
-        MG.GenerateModel(train_data)
+        train_data = pd.DataFrame(MT5.copy_rates_range("GOLD#", MT5.TIMEFRAME_M1, date_from_train, date_to_train))
+        test_data = pd.DataFrame(MT5.copy_rates_range("GOLD#", MT5.TIMEFRAME_M1, date_to_train, date_to))
+        MG.GenerateModel(train_data, test_data)
     elif (not os.path.isfile(MG.output_sell_model) or not os.path.isfile(MG.output_buy_model)):
         train_data = pd.DataFrame(MT5.copy_rates_range("GOLD#", MT5.TIMEFRAME_M3, date_from_train, date_to_train))
-        MG.GenerateModel(train_data)
+        test_data = pd.DataFrame(MT5.copy_rates_range("GOLD#", MT5.TIMEFRAME_M3, date_to_train, date_to))
+        MG.GenerateModel(train_data, test_data)
     
     with open(MG.out_put_model, 'rb') as file:
         my_model = pickle.load(file)

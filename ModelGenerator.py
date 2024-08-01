@@ -9,41 +9,43 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 from sklearn.preprocessing import MinMaxScaler
 
-signal_trigger = 0.2 # percentage of price change
-compare_period = -30
+
 
 sample_path = "manipulate.csv"
 
 out_put_model = "my_trained_model.pkl"
+regression_sensitivity = 0.3
 
-def GenerateModel(train_data):
+def GenerateModel(train_data, test_data):
     # Download historical data for XAU/USD (gold)
-    test_data = yf.download("GC=F", period="1mo", interval="5m")
+   #test_data = yf.download("GC=F", period="1mo", interval="5m")
     
-    test_data = IC.IndicatorCalculator(test_data, "Test")
+    test_data = IC.IndicatorCalculator(test_data, "Real")
     train_data = IC.IndicatorCalculator(train_data, "Real")
 
     # manipulating train data
-    train_data["Signal"] = np.where(((train_data["EMA200"].shift(compare_period) - train_data["EMA200"])/train_data["EMA200"]) * 100 > signal_trigger,
-        1,
-        0,
-    )
+    #train_data["Signal"] = np.where(((train_data["EMA200"].shift(compare_period) - train_data["EMA200"])/train_data["EMA200"]) * 100 > signal_trigger,
+    #    1,
+    #    0,
+    #)
 
-    train_data["Signal"] = np.where(((train_data["EMA200"].shift(compare_period) - train_data["EMA200"])/train_data["EMA200"]) * 100 < -(signal_trigger),
-        -1,
-        train_data["Signal"],
-    )
+    #train_data["Signal"] = np.where(((train_data["EMA200"].shift(compare_period) - train_data["EMA200"])/train_data["EMA200"]) * 100 < -(signal_trigger),
+    #    -1,
+    #    train_data["Signal"],
+    #)
 
-    # manipulating test data
-    test_data["Signal"] = np.where(((test_data["EMA200"].shift(compare_period) - test_data["EMA200"])/test_data["EMA200"]) * 100 > signal_trigger,
-        1,
-        0,
-    )
+    ## manipulating test data
+    #test_data["Signal"] = np.where(((test_data["EMA200"].shift(compare_period) - test_data["EMA200"])/test_data["EMA200"]) * 100 > signal_trigger,
+    #    1,
+    #    0,
+    #)
 
-    test_data["Signal"] = np.where(((test_data["EMA200"].shift(compare_period) - test_data["EMA200"])/test_data["EMA200"]) * 100 < -(signal_trigger),
-        -1,
-        test_data["Signal"],
-    )
+    #test_data["Signal"] = np.where(((test_data["EMA200"].shift(compare_period) - test_data["EMA200"])/test_data["EMA200"]) * 100 < -(signal_trigger),
+    #    -1,
+    #    test_data["Signal"],
+    #)
+    test_data = IC.DataManipulator(test_data)
+    train_data = IC.DataManipulator(train_data)
 
     #merge_signal = pd.Series(dtype="double")
 
@@ -93,22 +95,22 @@ def GenerateModel(train_data):
     y_pred_proba = model.predict_proba(X_test)
 
     # manual offset
-    #for i in range(len(y_pred)):
-    #    buy_prob = y_pred_proba[i][0] + regression_sensitivity
-    #    neutral_prob = y_pred_proba[i][1] - 2 * regression_sensitivity
-    #    sell_prob = y_pred_proba[i][2] + regression_sensitivity
+    for i in range(len(y_pred)):
+        buy_prob = y_pred_proba[i][0] + regression_sensitivity
+        neutral_prob = y_pred_proba[i][1] - 2 * regression_sensitivity
+        sell_prob = y_pred_proba[i][2] + regression_sensitivity
 
-    #    if ((neutral_prob > buy_prob) and (neutral_prob > sell_prob)):
-    #        y_pred[i] = 0
-    #        break
-    #    elif buy_prob > sell_prob:
-    #        y_pred[i] = 1
-    #        break
-    #    elif buy_prob < sell_prob:
-    #        y_pred[i] = -1
-    #        break
-    #    y_pred[i] = 0
-    #    break
+        if ((neutral_prob > buy_prob) and (neutral_prob > sell_prob)):
+            y_pred[i] = 0
+            break
+        elif buy_prob > sell_prob:
+            y_pred[i] = 1
+            break
+        elif buy_prob < sell_prob:
+            y_pred[i] = -1
+            break
+        y_pred[i] = 0
+        break
 
     print(classification_report(y_test, y_pred))
     print(f"Logistic Regression Model Accuracy: {accuracy:.2f}")
@@ -133,6 +135,8 @@ def GenerateModel(train_data):
     #    pickle.dump(model_i, file)
     test_data['Singal_predict_regress'] = y_pred
     test_data.to_csv(sample_path, sep=",")
+    with open(out_put_model, 'wb') as file:
+        pickle.dump(model, file)
 
     # ======================== generating LSTM Model ========================
     features = train_data[IC.input_to_model].values
@@ -177,5 +181,4 @@ def GenerateModel(train_data):
     test_data['Singal_predict_regress'] = y_pred
     test_data.to_csv(sample_path, sep=",")
 
-    with open(out_put_model, 'wb') as file:
-        pickle.dump(model, file)
+
