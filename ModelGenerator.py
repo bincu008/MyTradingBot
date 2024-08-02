@@ -4,7 +4,7 @@ import numpy as np
 import yfinance as yf
 import pickle
 import IndicatorCalculator as IC
-import tensorflow as tf
+#import tensorflow as tf
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 from sklearn.preprocessing import MinMaxScaler
@@ -22,71 +22,16 @@ def GenerateModel(train_data, test_data):
     
     test_data = IC.IndicatorCalculator(test_data, "Real")
     train_data = IC.IndicatorCalculator(train_data, "Real")
-
-    # manipulating train data
-    #train_data["Signal"] = np.where(((train_data["EMA200"].shift(compare_period) - train_data["EMA200"])/train_data["EMA200"]) * 100 > signal_trigger,
-    #    1,
-    #    0,
-    #)
-
-    #train_data["Signal"] = np.where(((train_data["EMA200"].shift(compare_period) - train_data["EMA200"])/train_data["EMA200"]) * 100 < -(signal_trigger),
-    #    -1,
-    #    train_data["Signal"],
-    #)
-
-    ## manipulating test data
-    #test_data["Signal"] = np.where(((test_data["EMA200"].shift(compare_period) - test_data["EMA200"])/test_data["EMA200"]) * 100 > signal_trigger,
-    #    1,
-    #    0,
-    #)
-
-    #test_data["Signal"] = np.where(((test_data["EMA200"].shift(compare_period) - test_data["EMA200"])/test_data["EMA200"]) * 100 < -(signal_trigger),
-    #    -1,
-    #    test_data["Signal"],
-    #)
+    
     test_data_output = IC.DataManipulator(test_data)
     train_data_output = IC.DataManipulator(train_data)
-
-    #merge_signal = pd.Series(dtype="double")
-
-    # manipulating data
-    #if (len(buy_signal) == len(sell_signal)) and (
-    #    len(buy_signal) == len(train_data["Signal"])
-    #):
-    #    for i in range(len(train_data["Signal"])):
-    #        if (buy_signal[i] == 1) and (sell_signal[i] == 0):
-    #            train_data["Signal"].values[i] = 1
-    #            continue
-    #        train_data["Signal"].values[i] = 0
-            
-    #    train_data.to_csv(sample_increase_path, sep=",")
-    #    train_data["Signal"] = pd.Series(dtype="double")
-
-    #    for i in range(len(train_data["Signal"])):
-    #        if (sell_signal[i] == 2) and (buy_signal[i] == 0):
-    #            train_data["Signal"].values[i] = 1
-    #            continue
-    #        train_data["Signal"].values[i] = 0
-            
-    #    train_data.to_csv(sample_decrease_path, sep=",")
-
-    #train_data_increase = pd.read_csv(sample_increase_path)
-    #train_data_decrease = pd.read_csv(sample_decrease_path)
+    
 
     # ======================== generating Logistic Regression Model ========================
-
-    # Split data into train and test sets
+    
     scaler = MinMaxScaler()
     train_data_trasform = scaler.fit_transform(train_data[IC.input_to_model])
     test_data_transform = scaler.fit_transform(test_data[IC.input_to_model])
-
-    #X = train_data_trasform
-    #y = train_data_output
-    #X_test = test_data_transform
-    #y_test = test_data_output
-    #X_train, X_test, y_train, y_test = train_test_split(
-    #    Xi, yi, test_size=0.2, random_state=42
-    #)
 
     # Train logistic regression model
     model = LogisticRegression(multi_class='multinomial', solver='lbfgs')
@@ -117,25 +62,7 @@ def GenerateModel(train_data, test_data):
 
     print(classification_report(test_data_output, y_pred))
     print(f"Logistic Regression Model Accuracy: {accuracy:.2f}")
-
     
-
-    # decrease model
-    #Xd = train_data_decrease[["EMA200","EMA50", "EMA2000", "RSI"]]
-    #yd = train_data_decrease["Signal"]
-    #Xd_train, Xd_test, yd_train, yd_test = train_test_split(
-    #    Xd, yd, test_size=0.2, random_state=42
-    #)
-    
-    #model_d = LogisticRegression(multi_class='multinomial', solver='lbfgs')
-    #model_d.fit(Xd_train, yd_train)
-    #yd_pred = model_d.predict(Xd_test)
-    #accuracy_d = (model_d.predict(Xd_test) == yd_test).mean()
-    #print(classification_report(yd_test, yd_pred))
-    #print(f"Decrease Model Accuracy: {accuracy_d:.2f}")
-
-    #with open(output_buy_model, 'wb') as file:
-    #    pickle.dump(model_i, file
     test_data['Singal'] = test_data_output
     test_data['Singal_predict_regress'] = y_pred
     test_data.to_csv(sample_path, sep=",")

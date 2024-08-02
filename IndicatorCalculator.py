@@ -13,7 +13,7 @@ input_to_model = ["RSI","MACD",#"DCxEMA20","DCxEMA50","DCxEMA200",
                   #"CU_EMA20x50","CU_EMA20x200","CU_EMA50x200",
                   #"CL_EMA20x50","CL_EMA20x200","CL_EMA50x200",
                   "SMA","Upper","Lower",
-                  "dfEMA100x1","dfEMA200x1"]
+                  "dfEMA20x1","dfEMA50x1","dfEMA100x1","dfEMA200x1"]
 
                   #  ["close","RSI","MACD",#"DCxEMA20","DCxEMA50","DCxEMA200",
                   #"DEMA20x50","DEMA20x200","DEMA50x200",
