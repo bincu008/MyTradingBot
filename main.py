@@ -10,8 +10,9 @@ import os
 import pickle
 import time
 import ModelGenerator as MG
+from sklearn.preprocessing import MinMaxScaler
 
-generate_model = False
+generate_model = True
 one_minute_model = "my_trained_model_1m.pkl"
 log_file = "log.txt"
 
@@ -65,12 +66,12 @@ if __name__ == "__main__":
     utc_time = pytz.timezone('UTC')
     # stupid server is UTC + 3!
     noww = datetime.now(utc_time) + timedelta(hours=3)
-    date_ = noww - timedelta(days =30)
+    date_ = noww - timedelta(days =5)
     date_from = date_.replace() #(hour=0, minute=0, second=0, microsecond=0)
-    date_to = noww
+    date_to = noww - timedelta(days =1) 
     
-    date_from_train = noww - timedelta(days = 90)
-    date_to_train = noww - timedelta(days = 30)
+    date_from_train = noww - timedelta(days = 91)
+    date_to_train = noww - timedelta(days = 31)
 
     if (generate_model):
         train_data = pd.DataFrame(MT5.copy_rates_range(trading_symbol, MT5.TIMEFRAME_M1, date_from_train, date_to_train))
@@ -95,6 +96,8 @@ if __name__ == "__main__":
 
         gold_ticks = pd.DataFrame(MT5.copy_rates_range(trading_symbol, MT5.TIMEFRAME_M1, date_from, now))
         gold_ticks = IC.IndicatorCalculator(gold_ticks, "Real")
+        scaler = MinMaxScaler()
+        gold_ticks = scaler.fit_transform(gold_ticks)
             
         buy_price = MT5.symbol_info_tick(trading_symbol).ask
         sell_price = MT5.symbol_info_tick(trading_symbol).bid

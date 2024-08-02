@@ -13,7 +13,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 sample_path = "manipulate.csv"
 
-out_put_model = "my_trained_model.pkl"
+out_put_model = "my_trained_model_1m_normalized.pkl"
 regression_sensitivity = 0.3
 
 def GenerateModel(train_data, test_data):
@@ -44,8 +44,8 @@ def GenerateModel(train_data, test_data):
     #    -1,
     #    test_data["Signal"],
     #)
-    test_data = IC.DataManipulator(test_data)
-    train_data = IC.DataManipulator(train_data)
+    test_data_output = IC.DataManipulator(test_data)
+    train_data_output = IC.DataManipulator(train_data)
 
     #merge_signal = pd.Series(dtype="double")
 
@@ -76,23 +76,26 @@ def GenerateModel(train_data, test_data):
     # ======================== generating Logistic Regression Model ========================
 
     # Split data into train and test sets
+    scaler = MinMaxScaler()
+    train_data_trasform = scaler.fit_transform(train_data[IC.input_to_model])
+    test_data_transform = scaler.fit_transform(test_data[IC.input_to_model])
 
-    X = train_data[IC.input_to_model]
-    y = train_data["Signal"]
-    X_test = test_data[IC.input_to_model]
-    y_test = test_data["Signal"]
+    #X = train_data_trasform
+    #y = train_data_output
+    #X_test = test_data_transform
+    #y_test = test_data_output
     #X_train, X_test, y_train, y_test = train_test_split(
     #    Xi, yi, test_size=0.2, random_state=42
     #)
 
     # Train logistic regression model
     model = LogisticRegression(multi_class='multinomial', solver='lbfgs')
-    model.fit(X, y)
+    model.fit(train_data_trasform, train_data_output)
 
     # Evaluate model
-    y_pred = model.predict(X_test)
-    accuracy = (y_pred == y_test).mean()
-    y_pred_proba = model.predict_proba(X_test)
+    y_pred = model.predict(test_data_transform)
+    accuracy = (y_pred == test_data_output).mean()
+    y_pred_proba = model.predict_proba(test_data_transform)
 
     # manual offset
     for i in range(len(y_pred)):
@@ -112,7 +115,7 @@ def GenerateModel(train_data, test_data):
         y_pred[i] = 0
         break
 
-    print(classification_report(y_test, y_pred))
+    print(classification_report(test_data_output, y_pred))
     print(f"Logistic Regression Model Accuracy: {accuracy:.2f}")
 
     
@@ -132,7 +135,8 @@ def GenerateModel(train_data, test_data):
     #print(f"Decrease Model Accuracy: {accuracy_d:.2f}")
 
     #with open(output_buy_model, 'wb') as file:
-    #    pickle.dump(model_i, file)
+    #    pickle.dump(model_i, file
+    test_data['Singal'] = test_data_output
     test_data['Singal_predict_regress'] = y_pred
     test_data.to_csv(sample_path, sep=",")
     with open(out_put_model, 'wb') as file:
