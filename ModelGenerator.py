@@ -34,7 +34,7 @@ def GenerateModel(train_data, test_data):
     test_data_transform = scaler.fit_transform(test_data[IC.input_to_model])
 
     # Train logistic regression model
-    model = LogisticRegression(multi_class='multinomial', solver='lbfgs')
+    model = LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=1000)
     model.fit(train_data_trasform, train_data_output)
 
     # Evaluate model
@@ -65,7 +65,9 @@ def GenerateModel(train_data, test_data):
     
     test_data['Singal'] = test_data_output
     test_data['Singal_predict_regress'] = y_pred
+    test_data = test_data.iloc[-2880:, :]
     test_data.to_csv(sample_path, sep=",")
+    print(IC.input_to_model)
     with open(out_put_model, 'wb') as file:
         pickle.dump(model, file)
 

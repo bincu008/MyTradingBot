@@ -1,19 +1,21 @@
+import string
 import pandas as pd
 import numpy as np
 
 curtain = 20
-roll_back = 10
-signal_trigger = 0.21 # percentage of price change
+roll_back = 5
+signal_trigger = 0.1 # percentage of price change
 quick_trigger = 0.2
-compare_period_long = -200
+compare_period_long = -20
 compare_period_short = -30
 
-input_to_model = ["RSI","MACD","ATR","Stochastic",#"DCxEMA20","DCxEMA50","DCxEMA200",
+
+input_to_model = ["RSI","MACD","ATR",#"DCxEMA20","DCxEMA50","DCxEMA200",
                   "DEMA20x50","DEMA20x200","DEMA50x200",
                   #"CU_EMA20x50","CU_EMA20x200","CU_EMA50x200",
                   #"CL_EMA20x50","CL_EMA20x200","CL_EMA50x200",
-                  #"SMA","Upper","Lower",
-                  "dfEMA20x1","dfEMA50x1","dfEMA100x1","dfEMA200x1"]
+                  "UpperxClose", "LowerxClose"]#"SMA","Upper","Lower",
+                  #"dfEMA20x1","dfEMA50x1","dfEMA100x1","dfEMA200x1"]
 
                   #  ["close","RSI","MACD",#"DCxEMA20","DCxEMA50","DCxEMA200",
                   #"DEMA20x50","DEMA20x200","DEMA50x200",
@@ -52,6 +54,8 @@ def IndicatorCalculator(table, key_token):
     table['SMA'] = table[key_close].rolling(window=curtain).mean()
     table['Upper'] = table['SMA'] + 2 * table[key_close].rolling(window=curtain).std()
     table['Lower'] = table['SMA'] - 2 * table[key_close].rolling(window=curtain).std()
+    table['UpperxClose'] = table[key_close] - table['Upper']
+    table['LowerxClose'] = table[key_close] - table['Lower']
 
     # Calculate RSI
     delta = table[key_close].diff()
@@ -78,9 +82,9 @@ def IndicatorCalculator(table, key_token):
     table['MACD'] = table['EMA12'] - table['EMA26']
 
     # calulateStochastic Oscillator
-    table['LowestLow'] = table[key_low].rolling(window=curtain).min()
-    table['HighestHigh'] = table[key_high].rolling(window=curtain).max()
-    table['Stochastic'] = 100 * (table[key_close] - table['LowestLow']) / (table['HighestHigh'] - table['LowestLow'])
+    #table['LowestLow'] = table[key_low].rolling(window=curtain).min()
+    #table['HighestHigh'] = table[key_high].rolling(window=curtain).max()
+    #table['Stochastic'] = 100 * (table[key_close] - table['LowestLow']) / (table['HighestHigh'] - table['LowestLow'])
 
 
     # additional calculation
@@ -95,14 +99,14 @@ def IndicatorCalculator(table, key_token):
     #table['CL_EMA10x20'] = np.where(((table['EMA10'].shift(1) < table['EMA20'].shift(1)) & (table['EMA10'] > table['EMA20'])),1 ,0)
     #table['CL_EMA10x50'] = np.where(((table['EMA10'].shift(1) < table['EMA50'].shift(1)) & (table['EMA10'] > table['EMA50'])),1 ,0)
     #table['CL_EMA10x200'] = np.where(((table['EMA10'].shift(1) < table['EMA200'].shift(1)) & (table['EMA10'] > table['EMA200'])),1 ,0)
-    table['CL_EMA20x50'] = np.where(((table['EMA20'].shift(1) < table['EMA50'].shift(1)) & (table['EMA20'] > table['EMA50'])),1 ,0)
-    table['CL_EMA20x200'] = np.where(((table['EMA20'].shift(1) < table['EMA200'].shift(1)) & (table['EMA20'] > table['EMA200'])),1 ,0)
-    table['CL_EMA50x200'] = np.where(((table['EMA50'].shift(1) < table['EMA200'].shift(1)) & (table['EMA50'] > table['EMA200'])),1 ,0)
+    #table['CL_EMA20x50'] = np.where(((table['EMA20'].shift(1) < table['EMA50'].shift(1)) & (table['EMA20'] > table['EMA50'])),1 ,0)
+    #table['CL_EMA20x200'] = np.where(((table['EMA20'].shift(1) < table['EMA200'].shift(1)) & (table['EMA20'] > table['EMA200'])),1 ,0)
+    #table['CL_EMA50x200'] = np.where(((table['EMA50'].shift(1) < table['EMA200'].shift(1)) & (table['EMA50'] > table['EMA200'])),1 ,0)
         # distance from what to what
     #table['DCxEMA10'] = (table[key_close] - table['EMA10']) / table[key_close]
-    table['DCxEMA20'] = (table[key_close] - table['EMA20'])
-    table['DCxEMA50'] = (table[key_close] - table['EMA50'])
-    table['DCxEMA200'] = (table[key_close] - table['EMA200'])
+    #table['DCxEMA20'] = (table[key_close] - table['EMA20'])
+    #table['DCxEMA50'] = (table[key_close] - table['EMA50'])
+    #table['DCxEMA200'] = (table[key_close] - table['EMA200'])
 
     #table['DEMA10x20'] = (table['EMA10'] - table['EMA20']) / table['EMA10']
     #table['DEMA10x50'] = (table['EMA10'] - table['EMA50']) / table['EMA10']
@@ -127,6 +131,38 @@ def IndicatorCalculator(table, key_token):
     #table['dfEMA50x2'] = (table['EMA50'].shift(roll_back) - table['EMA50'].shift(2*roll_back)) / table['EMA50'].shift(roll_back)
     #table['dfEMA100x2'] = (table['EMA100'].shift(roll_back) - table['EMA100'].shift(2*roll_back)) / table['EMA100'].shift(roll_back)
     #table['dfEMA200x2'] = (table['EMA200'].shift(roll_back) - table['EMA200'].shift(2*roll_back)) / table['EMA200'].shift(roll_back)
+
+    # adding backward data
+
+    for i in range(1, roll_back + 1):
+        ratio = 5
+        key = '_RB_'
+        rsi_name = 'RSI' + key + str(i)
+        macd_name = 'MACD' + key + str(i)
+        atr_name = 'ATR' + key + str(i)
+        bgbu_name = "UpperxClose" + key + str(i)
+        bgbl_name = "LowerxClose" + key + str(i)
+        dema25_name = "DEMA20x50" + key + str(i)
+        dema22_name = "DEMA20x200" + key + str(i)
+        dema52_name = "DEMA50x200" + key + str(i)
+
+        table[rsi_name] = table['RSI'].shift(i)
+        table[macd_name] = table['MACD'].shift(i)
+        table[atr_name] = table['ATR'].shift(i)
+        table[bgbu_name] = table['UpperxClose'].shift(i*ratio)
+        table[bgbl_name] = table['LowerxClose'].shift(i*ratio)
+        table[dema25_name] = table['DEMA20x50'].shift(i*ratio)
+        table[dema22_name] = table['DEMA20x200'].shift(i*ratio)
+        table[dema52_name] = table['DEMA50x200'].shift(i*ratio)
+
+        input_to_model.append(rsi_name)
+        input_to_model.append(macd_name)
+        input_to_model.append(atr_name)
+        input_to_model.append(bgbu_name)
+        input_to_model.append(bgbl_name)
+        input_to_model.append(dema25_name)
+        input_to_model.append(dema22_name)
+        input_to_model.append(dema52_name)
 
     # remove first 200 rows, unused
     table = table.iloc[200:, :]
@@ -155,12 +191,12 @@ def DataManipulator(table):
     #    table["Signal"],
     #)
     signal = pd.Series(dtype="int")
-    signal = np.where((((table["EMA200"].shift(compare_period_long) - table["EMA200"])/table["EMA200"]) * 100 > signal_trigger),
+    signal = np.where((((table["EMA50"].shift(compare_period_long) - table["EMA50"])/table["EMA50"]) * 100 > signal_trigger),
         1,
         0,
     )
 
-    signal = np.where((((table["EMA200"].shift(compare_period_long) - table["EMA200"])/table["EMA200"]) * 100 < -(signal_trigger)),
+    signal = np.where((((table["EMA50"].shift(compare_period_long) - table["EMA50"])/table["EMA50"]) * 100 < -(signal_trigger)),
         -1,
         signal,
     )
