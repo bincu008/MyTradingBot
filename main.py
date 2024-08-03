@@ -12,7 +12,7 @@ import time
 import ModelGenerator as MG
 from sklearn.preprocessing import MinMaxScaler
 import OrderRequest as OR
-generate_model = False
+generate_model = True
 one_minute_model = "my_trained_model_1m_normalized.pkl"
 log_file = "log.txt"
 
@@ -35,8 +35,8 @@ if __name__ == "__main__":
     date_from = date_.replace() #(hour=0, minute=0, second=0, microsecond=0)
     date_to = noww - timedelta(days =1) 
     
-    date_from_train = noww - timedelta(days = 91)
-    date_to_train = noww - timedelta(days = 31)
+    date_from_train = noww - timedelta(days = 92)
+    date_to_train = noww - timedelta(days = 32)
 
     if (generate_model):
         train_data = pd.DataFrame(MT5.copy_rates_range(OR.trading_symbol, MT5.TIMEFRAME_M1, date_from_train, date_to_train))
@@ -59,7 +59,7 @@ if __name__ == "__main__":
             date_from = (noww - timedelta(days =30)).replace(hour=0, minute=0, second=0, microsecond=0)
 
             gold_ticks = pd.DataFrame(MT5.copy_rates_range(OR.trading_symbol, MT5.TIMEFRAME_M1, date_from, now))
-            gold_ticks = IC.IndicatorCalculator(gold_ticks, "Real")
+            gold_ticks = IC.IndicatorCalculator(gold_ticks, "none")
             scaler = MinMaxScaler()
             normalized_data = scaler.fit_transform(gold_ticks[IC.input_to_model])
             

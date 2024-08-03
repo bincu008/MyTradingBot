@@ -3,16 +3,16 @@ import numpy as np
 
 curtain = 20
 roll_back = 10
-signal_trigger = 0.2 # percentage of price change
+signal_trigger = 0.21 # percentage of price change
 quick_trigger = 0.2
 compare_period_long = -200
 compare_period_short = -30
 
-input_to_model = ["RSI","MACD",#"DCxEMA20","DCxEMA50","DCxEMA200",
+input_to_model = ["RSI","MACD","ATR","Stochastic",#"DCxEMA20","DCxEMA50","DCxEMA200",
                   "DEMA20x50","DEMA20x200","DEMA50x200",
                   #"CU_EMA20x50","CU_EMA20x200","CU_EMA50x200",
                   #"CL_EMA20x50","CL_EMA20x200","CL_EMA50x200",
-                  "SMA","Upper","Lower",
+                  #"SMA","Upper","Lower",
                   "dfEMA20x1","dfEMA50x1","dfEMA100x1","dfEMA200x1"]
 
                   #  ["close","RSI","MACD",#"DCxEMA20","DCxEMA50","DCxEMA200",
@@ -25,11 +25,16 @@ input_to_model = ["RSI","MACD",#"DCxEMA20","DCxEMA50","DCxEMA200",
                   #,"DCxEMA10""DEMA10x20","DEMA10x50","DEMA10x200","CU_EMA10x20","CU_EMA10x50","CU_EMA10x200",
                   # "CL_EMA10x20","CL_EMA10x50","CL_EMA10x200","dfEMA10","dfEMA20","dfEMA50",
 def IndicatorCalculator(table, key_token):
-    if key_token == "Test":
-        key_close = 'Close'
-        key_high = 'High'
-        key_low = 'Low'
-        key_open = 'Open'
+    if key_token == "HA":
+        table['HA_Close'] = (table['open'] + table['high'] + table['low'] + table['close']) / 4
+        table['HA_Open'] = table['HA_Close']
+        table['HA_Open'] = (table['HA_Close'].shift(1) + table['HA_Open'].shift(1)) / 2
+        table['HA_High'] = table[['high', 'HA_Open', 'HA_Close']].max(axis=1)
+        table['HA_Low'] = table[['low', 'HA_Open', 'HA_Close']].min(axis=1)
+        key_close = 'HA_Close'
+        key_high = 'HA_High'
+        key_low = 'HA_Low'
+        key_open = 'HA_Open'
     else:
         key_close = 'close'
         key_high = 'high'

@@ -20,8 +20,8 @@ def GenerateModel(train_data, test_data):
     # Download historical data for XAU/USD (gold)
    #test_data = yf.download("GC=F", period="1mo", interval="5m")
     
-    test_data = IC.IndicatorCalculator(test_data, "Real")
-    train_data = IC.IndicatorCalculator(train_data, "Real")
+    test_data = IC.IndicatorCalculator(test_data, "none")
+    train_data = IC.IndicatorCalculator(train_data, "none")
     
     test_data_output = IC.DataManipulator(test_data)
     train_data_output = IC.DataManipulator(train_data)
