@@ -14,7 +14,7 @@ from sklearn.preprocessing import MinMaxScaler
 sample_path = "manipulate.csv"
 
 out_put_model = "my_trained_model_1m_normalized.pkl"
-regression_sensitivity = 0.3
+regression_sensitivity = 0
 
 def GenerateModel(train_data, test_data):
     # Download historical data for XAU/USD (gold)
@@ -65,7 +65,7 @@ def GenerateModel(train_data, test_data):
     
     test_data['Singal'] = test_data_output
     test_data['Singal_predict_regress'] = y_pred
-    test_data = test_data.iloc[-2880:, :]
+    test_data = test_data.iloc[-5760:, :]
     test_data.to_csv(sample_path, sep=",")
     print(IC.input_to_model)
     with open(out_put_model, 'wb') as file:

@@ -35,12 +35,12 @@ if __name__ == "__main__":
     date_from = date_.replace() #(hour=0, minute=0, second=0, microsecond=0)
     date_to = noww - timedelta(days =1) 
     
-    date_from_train = noww - timedelta(days = 92)
+    date_from_train = noww - timedelta(days = 62)
     date_to_train = noww - timedelta(days = 32)
 
     if (generate_model):
-        train_data = pd.DataFrame(MT5.copy_rates_range(OR.trading_symbol, MT5.TIMEFRAME_M1, date_from_train, date_to_train))
-        test_data = pd.DataFrame(MT5.copy_rates_range(OR.trading_symbol, MT5.TIMEFRAME_M1, date_to_train, date_to))
+        train_data = pd.DataFrame(MT5.copy_rates_range(OR.trading_symbol, MT5.TIMEFRAME_M3, date_from_train, date_to_train))
+        test_data = pd.DataFrame(MT5.copy_rates_range(OR.trading_symbol, MT5.TIMEFRAME_M3, date_to_train, date_to))
         MG.GenerateModel(train_data, test_data)
     
     with open(one_minute_model, 'rb') as file:

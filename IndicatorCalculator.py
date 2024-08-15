@@ -1,13 +1,12 @@
-import string
 import pandas as pd
 import numpy as np
 
 curtain = 20
 roll_back = 5
-signal_trigger = 0.1 # percentage of price change
+signal_trigger = 0.12 # percentage of price change
 quick_trigger = 0.2
-compare_period_long = -20
-compare_period_short = -30
+compare_period_long = -10
+compare_period_short = -5 + compare_period_long
 
 
 input_to_model = ["RSI","MACD","ATR",#"DCxEMA20","DCxEMA50","DCxEMA200",
@@ -146,14 +145,14 @@ def IndicatorCalculator(table, key_token):
         dema22_name = "DEMA20x200" + key + str(i)
         dema52_name = "DEMA50x200" + key + str(i)
 
-        table[rsi_name] = table['RSI'].shift(i)
-        table[macd_name] = table['MACD'].shift(i)
-        table[atr_name] = table['ATR'].shift(i)
-        table[bgbu_name] = table['UpperxClose'].shift(i*ratio)
-        table[bgbl_name] = table['LowerxClose'].shift(i*ratio)
-        table[dema25_name] = table['DEMA20x50'].shift(i*ratio)
-        table[dema22_name] = table['DEMA20x200'].shift(i*ratio)
-        table[dema52_name] = table['DEMA50x200'].shift(i*ratio)
+        table[rsi_name] = table['RSI'].shift((i- 1)*ratio) - table['RSI'].shift(i)
+        table[macd_name] = table['MACD'].shift((i- 1)*ratio) - table['MACD'].shift(i)
+        table[atr_name] = table['ATR'].shift((i- 1)*ratio) - table['ATR'].shift(i)
+        table[bgbu_name] = table['UpperxClose'].shift((i- 1)*ratio) - table['UpperxClose'].shift(i*ratio)
+        table[bgbl_name] = table['LowerxClose'].shift((i- 1)*ratio) - table['LowerxClose'].shift(i*ratio)
+        table[dema25_name] = table['DEMA20x50'].shift((i- 1)*ratio) - table['DEMA20x50'].shift(i*ratio)
+        table[dema22_name] = table['DEMA20x200'].shift((i- 1)*ratio) - table['DEMA20x200'].shift(i*ratio)
+        table[dema52_name] = table['DEMA50x200'].shift((i- 1)*ratio) - table['DEMA50x200'].shift(i*ratio)
 
         input_to_model.append(rsi_name)
         input_to_model.append(macd_name)
@@ -191,12 +190,16 @@ def DataManipulator(table):
     #    table["Signal"],
     #)
     signal = pd.Series(dtype="int")
-    signal = np.where((((table["EMA50"].shift(compare_period_long) - table["EMA50"])/table["EMA50"]) * 100 > signal_trigger),
+    signal = np.where((((table["EMA20"].shift(compare_period_long) - table["EMA20"])/table["EMA20"]) * 100 > signal_trigger)
+                      & (((table["EMA20"].shift(compare_period_short) - table["EMA20"].shift(compare_period_long))/table["EMA20"].shift(compare_period_long)) * 100
+                         > ((table["EMA20"].shift(compare_period_long) - table["EMA20"])/table["EMA20"]) * 100),
         1,
         0,
     )
 
-    signal = np.where((((table["EMA50"].shift(compare_period_long) - table["EMA50"])/table["EMA50"]) * 100 < -(signal_trigger)),
+    signal = np.where((((table["EMA20"].shift(compare_period_long) - table["EMA20"])/table["EMA20"]) * 100 < -signal_trigger)
+                      & (((table["EMA20"].shift(compare_period_short) - table["EMA20"].shift(compare_period_long))/table["EMA20"].shift(compare_period_long)) * 100
+                         < ((table["EMA20"].shift(compare_period_long) - table["EMA20"])/table["EMA20"]) * 100),
         -1,
         signal,
     )
