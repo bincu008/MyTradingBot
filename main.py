@@ -12,18 +12,16 @@ import time
 import ModelGenerator as MG
 from sklearn.preprocessing import MinMaxScaler
 import OrderRequest as OR
-generate_model = True
+generate_model = False
 one_minute_model = "my_trained_model_1m_normalized.pkl"
-log_file = "log.txt"
-
+log_file = "log_session_"
+polling_time = 180 #seconds
+suspend_time = 300 #seconds
 
 if __name__ == "__main__":
+    trade_manager = OR.MT_trade_manager()
     if MT5.initialize():
-        MT5.login(OR.ID, OR.PW, OR.SV)
-        account_info = MT5.account_info()
-        print(account_info)
-        print(MT5.terminal_info())
-        print(f"\n\n===== TRADING SYMBOL [{OR.trading_symbol}] =====")
+        trade_manager.login_account()
     else:
         print("initialize() failed")
         MT5.shutdown()
@@ -37,74 +35,83 @@ if __name__ == "__main__":
     
     date_from_train = noww - timedelta(days = 92)
     date_to_train = noww - timedelta(days = 32)
+    
+    log_file = log_file + (noww - timedelta(hours=3)).strftime("%H_%M_%S") + ".txt"
 
     if (generate_model):
-        train_data = pd.DataFrame(MT5.copy_rates_range(OR.trading_symbol, MT5.TIMEFRAME_M1, date_from_train, date_to_train))
-        test_data = pd.DataFrame(MT5.copy_rates_range(OR.trading_symbol, MT5.TIMEFRAME_M1, date_to_train, date_to))
+        train_data = pd.DataFrame(MT5.copy_rates_range(trade_manager.trading_symbol, MT5.TIMEFRAME_M3, date_from_train, date_to_train))
+        test_data = pd.DataFrame(MT5.copy_rates_range(trade_manager.trading_symbol, MT5.TIMEFRAME_M3, date_to_train, date_to))
         MG.GenerateModel(train_data, test_data)
     
     with open(one_minute_model, 'rb') as file:
         my_model = pickle.load(file)
         
-
     while True:
         log_list = []
         try:
             if not MT5.initialize():
                 print("initialize() failed")
                 MT5.shutdown()
-                
-            # if spread < 1.0:
-            now = datetime.now(utc_time) + timedelta(hours=3)
-            date_from = (noww - timedelta(days =30)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-            gold_ticks = pd.DataFrame(MT5.copy_rates_range(OR.trading_symbol, MT5.TIMEFRAME_M1, date_from, now))
-            gold_ticks = IC.IndicatorCalculator(gold_ticks, "none")
+            now = datetime.now(utc_time) + timedelta(hours=3)
+            date_from = (noww - timedelta(days =60)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+            data_manager = IC.IndicatorTable()
+            gold_ticks = pd.DataFrame(MT5.copy_rates_range(trade_manager.trading_symbol, MT5.TIMEFRAME_M3, date_from, now))
+            data_manager.Calculate(gold_ticks)
+
             scaler = MinMaxScaler()
-            normalized_data = scaler.fit_transform(gold_ticks[IC.input_to_model])
+            normalized_data = scaler.fit_transform(data_manager.ExportData())
             
         
             pred = my_model.predict(normalized_data)[-50:]
 
             my_pos = MT5.positions_get()
-            history_order = MT5.history_orders_get(date_from,now)
+            history_order = MT5.history_orders_get(now - timedelta(hours=10),now)
 
-            if (("tp" not in history_order[-1].comment) & ("tp" not in history_order[-2].comment)):
-                flag = False
-            else:
-                flag = False
-            txt = f"time: {now} current price ask: {MT5.symbol_info_tick(OR.trading_symbol).ask} current price bid:{MT5.symbol_info_tick(OR.trading_symbol).bid} prediction: {pred[-1]} trade block: {flag}"
+            #if (len(history_order) > 0):
+            #    if (("tp" not in history_order[-1].comment) & ("tp" not in history_order[-2].comment)):
+            #        flag = False
+            #    else:
+            #        flag = False
+            #else:
+            #    flag = False
+            trade_sum = trade_manager.trade_summary()
+            txt = f"time: {now - timedelta(hours=3)} ask: {MT5.symbol_info_tick(trade_manager.trading_symbol).ask} bid:{MT5.symbol_info_tick(trade_manager.trading_symbol).bid} prediction: {pred[-5]}{pred[-4]}{pred[-3]}{pred[-2]}{pred[-1]} win: {trade_sum['win']} lose: {trade_sum['lose']}"
             log_list.append(txt)
-            print(txt)
+            #print(txt)
         
-            if ((len(my_pos) == 0) and (flag == False)):
-            
-                result = OR.create_send_order("sell", gold_ticks.iloc[-1]['ATR'])
-                if (OR.validate_buy(pred)): # buy predict, not too late to enter
-                    result = OR.create_send_order("buy", gold_ticks.iloc[-1]['ATR'])
-                    log_list.append(txt)
-                    time.sleep(300)
+            if (trade_manager.verify_order_status(my_pos, history_order)):#((len(my_pos) == 0) and (flag == False)):
+                result = trade_manager.check_for_trade(pred, data_manager.table.iloc[-1]['ATR'])
+                if (result["result"] and result["message"].comment == 'Request executed'):
+                    log_list.append(result["message"])
+                    time.sleep(polling_time)
+                #result = OR.create_send_order("sell", gold_ticks.iloc[-1]['ATR'])
+                #if (OR.validate_buy(pred)): # buy predict, not too late to enter
+                #    result = OR.create_send_order("buy", gold_ticks.iloc[-1]['ATR'])
+                #    log_list.append(txt)
+                #    time.sleep(300)
 
-                elif (OR.validate_sell(pred)): # sell predict, not too late to enter
-                    result = OR.create_send_order("sell", gold_ticks.iloc[-1]['ATR'])
-                    log_list.append(txt)
-                    time.sleep(300)
+                #elif (OR.validate_sell(pred)): # sell predict, not too late to enter
+                #    result = OR.create_send_order("sell", gold_ticks.iloc[-1]['ATR'])
+                #    log_list.append(txt)
+                #    time.sleep(300)
             else:
-                txt = f"Position avalable, skip"
+                txt = f"Position available, skip"
                 log_list.append(txt)
                 print(txt)
         except:
-            txt = f"time: {now} error while executing code, sleep for 5m"
+            txt = f"time: {now} error while executing code, sleep for {suspend_time}s"
             file = open(log_file, "a")  # append mode
             print(txt)
             for line in log_list:
                 file.write(f"{line}\n")
                 file.close()
-            time.sleep(300)
+            time.sleep(suspend_time)
         
         file = open(log_file, "a")  # append mode
         for line in log_list:
             file.write(f"{line}\n")
         file.close()
         
-        time.sleep(5)
+        time.sleep(polling_time)

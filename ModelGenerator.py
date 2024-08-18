@@ -14,24 +14,26 @@ from sklearn.preprocessing import MinMaxScaler
 sample_path = "manipulate.csv"
 
 out_put_model = "my_trained_model_1m_normalized.pkl"
-regression_sensitivity = 0.3
+regression_sensitivity = 0.0
 
 def GenerateModel(train_data, test_data):
     # Download historical data for XAU/USD (gold)
    #test_data = yf.download("GC=F", period="1mo", interval="5m")
+    test_data_manager = IC.IndicatorTable()
+    train_data_manager = IC.IndicatorTable()
+
+    test_data_manager.Calculate(test_data)
+    train_data_manager.Calculate(train_data)
     
-    test_data = IC.IndicatorCalculator(test_data, "none")
-    train_data = IC.IndicatorCalculator(train_data, "none")
-    
-    test_data_output = IC.DataManipulator(test_data)
-    train_data_output = IC.DataManipulator(train_data)
+    test_data_output = test_data_manager.DataManipulate()
+    train_data_output = train_data_manager.DataManipulate()
     
 
     # ======================== generating Logistic Regression Model ========================
     
     scaler = MinMaxScaler()
-    train_data_trasform = scaler.fit_transform(train_data[IC.input_to_model])
-    test_data_transform = scaler.fit_transform(test_data[IC.input_to_model])
+    train_data_trasform = scaler.fit_transform(train_data_manager.ExportData())
+    test_data_transform = scaler.fit_transform(test_data_manager.ExportData())
 
     # Train logistic regression model
     model = LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=1000)
@@ -40,34 +42,13 @@ def GenerateModel(train_data, test_data):
     # Evaluate model
     y_pred = model.predict(test_data_transform)
     accuracy = (y_pred == test_data_output).mean()
+    print(f"ACCURACY: {accuracy}")
     y_pred_proba = model.predict_proba(test_data_transform)
 
-    # manual offset
-    for i in range(len(y_pred)):
-        buy_prob = y_pred_proba[i][0] + regression_sensitivity
-        neutral_prob = y_pred_proba[i][1] - 2 * regression_sensitivity
-        sell_prob = y_pred_proba[i][2] + regression_sensitivity
-
-        if ((neutral_prob > buy_prob) and (neutral_prob > sell_prob)):
-            y_pred[i] = 0
-            break
-        elif buy_prob > sell_prob:
-            y_pred[i] = 1
-            break
-        elif buy_prob < sell_prob:
-            y_pred[i] = -1
-            break
-        y_pred[i] = 0
-        break
-
-    print(classification_report(test_data_output, y_pred))
-    print(f"Logistic Regression Model Accuracy: {accuracy:.2f}")
+    test_data_manager.UpdatePrediction(y_pred, y_pred_proba)
     
-    test_data['Singal'] = test_data_output
-    test_data['Singal_predict_regress'] = y_pred
-    test_data = test_data.iloc[-2880:, :]
-    test_data.to_csv(sample_path, sep=",")
-    print(IC.input_to_model)
+    output = test_data_manager.table.iloc[-2880:, :]
+    output.to_csv(sample_path, sep=",")
     with open(out_put_model, 'wb') as file:
         pickle.dump(model, file)
 
