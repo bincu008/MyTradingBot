@@ -1,4 +1,8 @@
 import MetaTrader5 as MT5
+from datetime import datetime
+from datetime import timedelta
+import time
+import pytz
 
 class MT_trade_manager:
     def __init__(self):
@@ -10,7 +14,12 @@ class MT_trade_manager:
         self.price = 0.0
         self.spread = 0.0
         self.order_taken = []
-
+        
+        self.now = (datetime.now(pytz.timezone('UTC')) + timedelta(hours=7)).strftime("%H_%M_%S-%d_%m_%Y")
+        self.log_file = "position_taken_session_" + self.now + ".csv"
+        file = open(self.log_file, "w")  # append mode
+        file.write("Time,Position ID,Type,Price,TP,SL,Buy Rate,Neutral Rate,Sell Rate,Result\n")
+        file.close()
         self.request_buy = {
         "action": MT5.TRADE_ACTION_DEAL,
         "symbol": self.trading_symbol,
@@ -46,19 +55,27 @@ class MT_trade_manager:
 
     def verify_order_status(self, my_pos, history_order):
         for i in range(len(self.order_taken)):
-            if (self.order_taken[i]["Status"] == "Open" and self.order_taken[i]["Trade ID"].comment == 'Request executed'):
+            if (self.order_taken[i]["Status"] == "Open"):
                 for order in history_order:
-                    if (order.ticket == self.order_taken[i]["Trade ID"].order and "sl" in order.comment):
-                        self.order_taken[i]["Status"] == "Lose"
-                    elif (order.ticket == self.order_taken[i]["Trade ID"].order and "tp" in order.comment):
-                        self.order_taken[i]["Status"] == "Win"
-        
+                    if (order.position_id == self.order_taken[i]["ID"] and "sl" in order.comment and self.order_taken[i]["Status"] == "Open"):
+                        self.order_taken[i]["Status"] = "Lose"
+                        #Time,Position ID,Type,Price,TP,SL,Buy Rate,Neutral Rate,Sell Rate,Result
+                        file = open(self.log_file, "a")  # append mode
+                        file.write(f"{self.now},{self.order_taken[i]['ID']},{self.order_taken[i]['Type']},{self.order_taken[i]['Detail']['price']},{self.order_taken[i]['Detail']['tp']},{self.order_taken[i]['Detail']['sl']},{self.order_taken[i]['Buy_rate']},{self.order_taken[i]['Neutral_rate']},{self.order_taken[i]['Sell_rate']},Lose")
+                        file.close()
+                    elif (order.position_id == self.order_taken[i]["ID"] and "tp" in order.comment and self.order_taken[i]["Status"] == "Open"):
+                        self.order_taken[i]["Status"] = "Win"
+                        file = open(self.log_file, "a")  # append mode
+                        file.write(f"{self.now},{self.order_taken[i]['ID']},{self.order_taken[i]['Type']},{self.order_taken[i]['Detail']['price']},{self.order_taken[i]['Detail']['tp']},{self.order_taken[i]['Detail']['sl']},{self.order_taken[i]['Buy_rate']},{self.order_taken[i]['Neutral_rate']},{self.order_taken[i]['Sell_rate']},Win")
+                        file.close()
+
         if (len(my_pos) > 0):
             return False
         if (len(self.order_taken) > 2):
             if (self.order_taken[-1]["Status"] == "Lose" and self.order_taken[-2]["Status"] == "Lose"):
-                print("2 losing streak, need restart!!!!")
-                return False
+                print("2 losing streak, penalty 10m")
+                time.sleep(600)
+                #return True
         return True
 
     def validate_buy(self, pred):
@@ -71,40 +88,47 @@ class MT_trade_manager:
             return True
         return False
 
-    def check_for_trade(self, pred, offset):
+    def check_for_trade(self, pred, pred_proba, offset):
         infor = MT5.symbol_info_tick(self.trading_symbol)
         buy_price = infor.ask
         sell_price = infor.bid
         self.spread = buy_price - sell_price
+        if offset < 1.8:  #take trade only when ATR >= 2 dollar
+            return {"result" : False, "message" : f"Small ATR {offset} skip trade"}
+
         if (self.spread > offset):
             guard_band = 2*self.spread
         else:
             guard_band = offset
-
+        
+        buy_rate = '|'.join([f"{x:.3f}" for x in list(pred_proba[-10:][:, 2])])
+        neutral_rate = '|'.join([f"{x:.3f}" for x in list(pred_proba[-10:][:, 1])])
+        sell_rate = '|'.join([f"{x:.3f}" for x in list(pred_proba[-10:][:, 0])])
         if (self.validate_buy(pred)):
             self.request_buy["price"] = buy_price
             self.request_buy["sl"] = buy_price - (1*guard_band) # 2 dollar please
-            self.request_buy["tp"] = buy_price + (2*guard_band)
+            self.request_buy["tp"] = buy_price + (1.5*guard_band)
             result = MT5.order_send(self.request_buy)
             txt = f"Order status: {result}"
             if result.comment == 'Request executed':
-                self.order_taken.append({"Trade ID" : result, "Status" : "Open"})
+                self.order_taken.append({"ID" : result.order, "Status" : "Open","Type": "Buy", "Detail" : self.request_buy, "Buy_rate" : {buy_rate}, "Neutral_rate" : {neutral_rate}, "Sell_rate" : {sell_rate}})
             print(txt)
-            return {"result" : True, "message" : result}
+            return {"result" : True, "message" : {"ID" : result.order, "Status" : "Open","Type": "Buy", "Detail" : self.request_buy, "Buy_rate" : {buy_rate}, "Neutral_rate" : {neutral_rate}, "Sell_rate" : {sell_rate}}}
 
         elif (self.validate_sell(pred)):
             self.request_sell["price"] = sell_price
             self.request_sell["sl"] = sell_price + (1*guard_band) # 2 dollar please
-            self.request_sell["tp"] = sell_price - (2*guard_band)
+            self.request_sell["tp"] = sell_price - (1.5*guard_band)
             result = MT5.order_send(self.request_sell)
             txt = f"Order status: {result}"
             if result.comment == 'Request executed':
-                self.order_taken.append({"Trade ID" : result, "Status" : "Open"})
+                self.order_taken.append({"ID" : result.order, "Status" : "Open","Type": "Sell", "Detail" : self.request_sell, "Buy_rate" : {buy_rate}, "Neutral_rate" : {neutral_rate}, "Sell_rate" : {sell_rate}})
             print(txt)
-            return {"result" : True, "message" : result}
-        return {"result" : False, "message" : ""}
+            return {"result" : True, "message" : {"ID" : result.order, "Status" : "Open","Type": "Sell", "Detail" : self.request_buy, "Buy_rate" : {buy_rate}, "Neutral_rate" : {neutral_rate}, "Sell_rate" : {sell_rate}}}
+        return {"result" : False, "message" : "No trade"}
     
     def trade_summary(self):
+        self.now = (datetime.now(pytz.timezone('UTC')) + timedelta(hours=7)).strftime("%H_%M_%S-%d_%m_%Y")
         win = 0
         lose = 0
         for order in self.order_taken:

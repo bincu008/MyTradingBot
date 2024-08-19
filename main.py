@@ -17,6 +17,7 @@ one_minute_model = "my_trained_model_1m_normalized.pkl"
 log_file = "log_session_"
 polling_time = 180 #seconds
 suspend_time = 300 #seconds
+trade_waiting_time = 900
 
 if __name__ == "__main__":
     trade_manager = OR.MT_trade_manager()
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     date_from_train = noww - timedelta(days = 92)
     date_to_train = noww - timedelta(days = 32)
     
-    log_file = log_file + (noww - timedelta(hours=3)).strftime("%H_%M_%S") + ".txt"
+    log_file = log_file + (noww + timedelta(hours=4)).strftime("%H_%M_%S-%d_%m_%Y") + ".txt"
 
     if (generate_model):
         train_data = pd.DataFrame(MT5.copy_rates_range(trade_manager.trading_symbol, MT5.TIMEFRAME_M3, date_from_train, date_to_train))
@@ -65,9 +66,10 @@ if __name__ == "__main__":
             
         
             pred = my_model.predict(normalized_data)[-50:]
+            pred_proba = my_model.predict_proba(normalized_data)[-50:]
 
             my_pos = MT5.positions_get()
-            history_order = MT5.history_orders_get(now - timedelta(hours=10),now)
+            history_order = MT5.history_orders_get(now - timedelta(hours=3),now)
 
             #if (len(history_order) > 0):
             #    if (("tp" not in history_order[-1].comment) & ("tp" not in history_order[-2].comment)):
@@ -77,15 +79,15 @@ if __name__ == "__main__":
             #else:
             #    flag = False
             trade_sum = trade_manager.trade_summary()
-            txt = f"time: {now - timedelta(hours=3)} ask: {MT5.symbol_info_tick(trade_manager.trading_symbol).ask} bid:{MT5.symbol_info_tick(trade_manager.trading_symbol).bid} prediction: {pred[-5]}{pred[-4]}{pred[-3]}{pred[-2]}{pred[-1]} win: {trade_sum['win']} lose: {trade_sum['lose']}"
+            txt = f"time: {(now + timedelta(hours=4)).strftime('%H_%M_%S-%d_%m_%Y')} ask: {MT5.symbol_info_tick(trade_manager.trading_symbol).ask} bid:{MT5.symbol_info_tick(trade_manager.trading_symbol).bid} prediction: {pred[-5]}{pred[-4]}{pred[-3]}{pred[-2]}{pred[-1]} win: {trade_sum['win']} lose: {trade_sum['lose']}"
             log_list.append(txt)
             #print(txt)
         
             if (trade_manager.verify_order_status(my_pos, history_order)):#((len(my_pos) == 0) and (flag == False)):
-                result = trade_manager.check_for_trade(pred, data_manager.table.iloc[-1]['ATR'])
-                if (result["result"] and result["message"].comment == 'Request executed'):
-                    log_list.append(result["message"])
-                    time.sleep(polling_time)
+                result = trade_manager.check_for_trade(pred, pred_proba, data_manager.table.iloc[-1]['ATR'])
+                log_list.append(result["message"])
+                if (result["result"]):
+                    time.sleep(trade_waiting_time)
                 #result = OR.create_send_order("sell", gold_ticks.iloc[-1]['ATR'])
                 #if (OR.validate_buy(pred)): # buy predict, not too late to enter
                 #    result = OR.create_send_order("buy", gold_ticks.iloc[-1]['ATR'])
@@ -97,7 +99,7 @@ if __name__ == "__main__":
                 #    log_list.append(txt)
                 #    time.sleep(300)
             else:
-                txt = f"Position available, skip"
+                txt = "Position available, skip"
                 log_list.append(txt)
                 print(txt)
         except:
