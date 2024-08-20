@@ -47,7 +47,7 @@ def GenerateModel(train_data, test_data):
 
     test_data_manager.UpdatePrediction(y_pred, y_pred_proba)
     
-    output = test_data_manager.table.iloc[-2880:, :]
+    output = test_data_manager.table.iloc[-5000:, :]
     output.to_csv(sample_path, sep=",")
     with open(out_put_model, 'wb') as file:
         pickle.dump(model, file)

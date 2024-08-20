@@ -79,12 +79,13 @@ if __name__ == "__main__":
             #else:
             #    flag = False
             trade_sum = trade_manager.trade_summary()
-            txt = f"time: {(now + timedelta(hours=4)).strftime('%H_%M_%S-%d_%m_%Y')} ask: {MT5.symbol_info_tick(trade_manager.trading_symbol).ask} bid:{MT5.symbol_info_tick(trade_manager.trading_symbol).bid} prediction: {pred[-5]}{pred[-4]}{pred[-3]}{pred[-2]}{pred[-1]} win: {trade_sum['win']} lose: {trade_sum['lose']}"
+            pred_string = '|'.join([f"{x}" for x in list(pred[-10:])])
+            txt = f"time: {(now + timedelta(hours=4)).strftime('%H_%M_%S-%d_%m_%Y')} ask: {MT5.symbol_info_tick(trade_manager.trading_symbol).ask} bid:{MT5.symbol_info_tick(trade_manager.trading_symbol).bid} prediction: {pred_string} ATR: {data_manager.table.iloc[-1]['ATR']:.3f} win: {trade_sum['win']} lose: {trade_sum['lose']}"
             log_list.append(txt)
             #print(txt)
         
             if (trade_manager.verify_order_status(my_pos, history_order)):#((len(my_pos) == 0) and (flag == False)):
-                result = trade_manager.check_for_trade(pred, pred_proba, data_manager.table.iloc[-1]['ATR'])
+                result = trade_manager.check_for_trade(pred, pred_proba, data_manager.table.iloc[-1]['ATR'], data_manager.table.iloc[-1]['close'], data_manager.table.iloc[-1]['EMA200'])
                 log_list.append(result["message"])
                 if (result["result"]):
                     time.sleep(trade_waiting_time)
