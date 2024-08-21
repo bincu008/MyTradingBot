@@ -7,16 +7,17 @@ class IndicatorTable:
         pd.options.mode.chained_assignment = None  # default='warn'
         self.curtain = 20
         self.roll_back = 5
-        self.signal_trigger = 0.17 # percentage of price change
+        self.signal_trigger = 0.1 # percentage of price change
         self.quick_trigger = 0.2
-        self.compare_period_long = -18
+        self.compare_period_long = -15
         self.compare_period_short = -30
         self.regression_sensitivity = 0.0
         self.rsi_upper = 70
         self.rsi_lower = 30
         self.key_token = "none"
-        self.input_to_model = ["ATR","RSI_up","RSI_low","tick_volume","RSI",#"RSI",#"DCxEMA20","DCxEMA50","DCxEMA200","RSI","MACD","ATR",
-                      "dfEMA50","dfEMA20","MACD","DCxEMA200","DEMA50x200","DCxEMA100"]
+        self.input_to_model = ["tick_volume",#"RSI_EMA14",#"DCxEMA20","DCxEMA50","DCxEMA200","RSI","MACD","ATR",
+                      #"DEMA20x50","DEMA20x200","DEMA20x100","DEMA50x100","DEMA50x200","DEMA100x200",
+                      "MACD","MACD_signal","MACD_hist","DCxEMA20"]
                       #"DEMA20x50","DEMA20x200","DEMA50x200",
                       #"CU_EMA20x50","CU_EMA20x200","CU_EMA50x200",
                       #"CL_EMA20x50","CL_EMA20x200","CL_EMA50x200",
@@ -56,6 +57,7 @@ class IndicatorTable:
         #table["EMA10"] = table[key_close].ewm(span=10).mean()
         self.table["EMA20"] = self.table[key_close].ewm(span=20).mean()
         self.table["EMA50"] = self.table[key_close].ewm(span=50).mean()
+        self.table["EMA5"] = self.table[key_close].ewm(span=5).mean()
 
         # Calculate Bollinger Bands
         self.table['SMA'] = self.table[key_close].rolling(window=self.curtain).mean()
@@ -83,11 +85,14 @@ class IndicatorTable:
         tr = np.maximum(self.table[key_high] - self.table[key_low],
                         np.abs(self.table[key_high] - self.table[key_close].shift()))
         self.table['ATR'] = tr.rolling(window=self.curtain).mean()
+        self.table['RSI_EMA14'] = self.table["RSI"].ewm(span=14).mean()
 
         # calulate MACD
         self.table['EMA12'] = self.table[key_close].ewm(span=12).mean()
         self.table['EMA26'] = self.table[key_close].ewm(span=26).mean()
         self.table['MACD'] = self.table['EMA12'] - self.table['EMA26']
+        self.table['MACD_signal'] = self.table['MACD'].ewm(span=self.curtain).mean()
+        self.table['MACD_hist'] = self.table['MACD'] - self.table['MACD_signal']
 
         # calulateStochastic Oscillator
         self.table['LowestLow'] = self.table[key_low].rolling(window=self.curtain).min()
@@ -115,15 +120,18 @@ class IndicatorTable:
         #table['DCxEMA20'] = (table[key_close] - table['EMA20'])
         #table['DCxEMA50'] = (table[key_close] - table['EMA50'])
         table['DCxEMA100'] = (table[key_close] - table['EMA100'])
-        table['DCxEMA200'] = (table[key_close] - table['EMA200'])
+        table['DCxEMA20'] = (table[key_close] - table['EMA20'])
 
         #table['DEMA10x20'] = (table['EMA10'] - table['EMA20']) / table['EMA10']
         #table['DEMA10x50'] = (table['EMA10'] - table['EMA50']) / table['EMA10']
         #table['DEMA10x200'] = (table['EMA10'] - table['EMA200']) / table['EMA10']
         self.table['DEMA20x50'] = (self.table['EMA20'] - self.table['EMA50'])
         self.table['DEMA20x200'] = (self.table['EMA20'] - self.table['EMA200'])
+        self.table['DEMA20x100'] = (self.table['EMA20'] - self.table['EMA100'])
         self.table['DEMA50x200'] = (self.table['EMA50'] - self.table['EMA200'])
         self.table['DEMA50x100'] = (self.table['EMA50'] - self.table['EMA100'])
+        self.table['DEMA100x200'] = (self.table['EMA100'] - self.table['EMA200'])
+
             # open close high low difference
         #table['DiffCO'] = (table[key_close] - table[key_open]) / table[key_close]
         #table['DiffCH'] = (table[key_close] - table[key_high]) / table[key_close]
@@ -145,64 +153,61 @@ class IndicatorTable:
         # adding backward data
 
         for i in range(1, self.roll_back + 1):
-            ratio = 3
+            ratio = 2
             key = '_RB_'
-            #rsi_name = 'RSI' + key + str(i)
+            rsi_name = 'RSI_EMA14' + key + str(i)
             #stoch_name = 'Stochastic' + key + str(i)
-            #volume_name = 'tick_volume' + key + str(i)
+            volume_name = 'tick_volume' + key + str(i)
             #rsi_up_name = 'RSI_up' + key + str(i)
             #rsi_low_name = 'RSI_low' + key + str(i)
             #macd_name = 'MACD' + key + str(i)
             #atr_name = 'ATR' + key + str(i)
             #bgbu_name = "UpperxClose" + key + str(i)
             #bgbl_name = "LowerxClose" + key + str(i)
-            dema25_name = "DEMA20x50" + key + str(i)
-            #dema22_name = "DEMA20x200" + key + str(i)
-            dema52_name = "DEMA50x200" + key + str(i)
-            dema20_name = "dfEMA20" + key + str(i)
-            dema50_name = "dfEMA50" + key + str(i)
-            #dema100_name = "dfEMA100" + key + str(i)
-            #dema200_name = "dfEMA200" + key + str(i)
-            dcema100_name = "DCxEMA100" + key + str(i)
-            dcema200_name = "DCxEMA200" + key + str(i)
+            #dema25_name     = "DEMA20x50" + key + str(i)
+            #dema220_name    = "DEMA20x200" + key + str(i)
+            #dema210_name    = "DEMA20x100" + key + str(i)
+            #dema510_name    = "DEMA50x100" + key + str(i)
+            #dema520_name    = "DEMA50x200" + key + str(i)
+            #dema1020_name   = "DEMA100x200" + key + str(i)
+            macd_name       = "MACD" + key + str(i)
+            macd_sig_name   = "MACD_signal" + key + str(i)
+            macd_hist_name  = "MACD_hist" + key + str(i)
+            dcema20_name    = "DCxEMA20" + key + str(i)
 
-            #self.table[rsi_name] = self.table['RSI'].shift(i)
+            self.table[rsi_name] = self.table['RSI_EMA14'].shift(i-1) - self.table['RSI_EMA14'].shift(i)
             #self.table[stoch_name] = self.table['Stochastic'].shift(i)
-            #self.table[volume_name] = self.table['tick_volume'].shift(i - 1) - self.table['tick_volume'].shift(i)
+            self.table[volume_name] = self.table['tick_volume'].shift(i*ratio)
             #self.table[rsi_up_name] = self.table['RSI_up'].shift(i*ratio)
             #self.table[rsi_low_name] = self.table['RSI_low'].shift(i*ratio)
             #self.table[macd_name] = self.table['MACD'].shift(i)
             #self.table[atr_name] = self.table['ATR'].shift(i - 1) - self.table['ATR'].shift(i)
             #self.table[bgbu_name] = self.table['UpperxClose'].shift(i*ratio)
             #self.table[bgbl_name] = self.table['LowerxClose'].shift(i*ratio)
-            table[dema25_name] = table['DEMA20x50'].shift(i)
-            #table[dema22_name] = table['DEMA20x200'].shift(i*ratio)
-            table[dema52_name] = table['DEMA50x200'].shift(i*ratio)
-            self.table[dema20_name] = self.table['dfEMA20'].shift(i*ratio)
-            self.table[dema50_name] = self.table['dfEMA50'].shift(i*ratio)
-            #self.table[dema100_name] = self.table['dfEMA100'].shift(i*ratio)
-            self.table[dcema100_name] = self.table['DCxEMA100'].shift(i*ratio)
-            self.table[dcema200_name] = self.table['DCxEMA200'].shift(i*ratio)
-            #self.table[dema200_name] = self.table['dfEMA200'].shift(i*ratio)
 
-            #self.input_to_model.append(rsi_name)
-            #self.input_to_model.append(stoch_name)
-            #self.input_to_model.append(volume_name)
-            #self.input_to_model.append(rsi_up_name)
-            #self.input_to_model.append(rsi_low_name)
-            #self.input_to_model.append(macd_name)
-            #self.input_to_model.append(atr_name)
-            #self.input_to_model.append(bgbu_name)
-            #self.input_to_model.append(bgbl_name)
-            self.input_to_model.append(dema25_name)
-            #self.input_to_model.append(dema22_name)
-            self.input_to_model.append(dema52_name)
-            self.input_to_model.append(dema20_name)
-            self.input_to_model.append(dema50_name)
-            #self.input_to_model.append(dema100_name)
-            self.input_to_model.append(dcema100_name)
-            self.input_to_model.append(dcema200_name)
-            #self.input_to_model.append(dema200_name)
+            #self.table[dema25_name]     = self.table['DEMA20x50'].shift(i*ratio)
+            #self.table[dema220_name]    = self.table['DEMA20x200'].shift(i*ratio)
+            #self.table[dema210_name]    = self.table['DEMA20x100'].shift(i*ratio)
+            #self.table[dema510_name]    = self.table['DEMA50x100'].shift(i*ratio)
+            #self.table[dema520_name]    = self.table['DEMA50x200'].shift(i*ratio)
+            #self.table[dema1020_name]   = self.table['DEMA100x200'].shift(i*ratio)
+            self.table[macd_name]       = self.table['MACD'].shift(i*ratio)
+            self.table[macd_sig_name]   = self.table['MACD_signal'].shift(i*ratio)
+            self.table[macd_hist_name]  = self.table['MACD_hist'].shift(i*ratio)
+            self.table[dcema20_name]    = self.table['DCxEMA20'].shift(i*ratio)
+
+            #self.input_to_model.append(dema25_name)
+            #self.input_to_model.append(dema220_name)
+            #self.input_to_model.append(dema210_name)
+            #self.input_to_model.append(dema510_name)
+            #self.input_to_model.append(dema520_name)
+            #self.input_to_model.append(dema1020_name)
+            self.input_to_model.append(macd_name)
+            self.input_to_model.append(macd_sig_name)
+            self.input_to_model.append(macd_hist_name)
+            self.input_to_model.append(dcema20_name)
+            self.input_to_model.append(volume_name)
+            self.input_to_model.append(rsi_name)
             self.input_to_model = list(set(self.input_to_model))
             #print(self.input_to_model)
         # remove first 200 rows, unused
@@ -259,12 +264,12 @@ class IndicatorTable:
         #    table["Signal"],
         #)
         signal = pd.Series(dtype="int")
-        signal = np.where((((self.table["EMA50"].shift(self.compare_period_long) - self.table["EMA50"])/self.table["EMA50"]) * 100 > self.signal_trigger),
+        signal = np.where((((self.table["EMA5"].shift(self.compare_period_long) - self.table["EMA5"])/self.table["EMA5"]) * 100 > self.signal_trigger),
             1,
             0,
         )
 
-        signal = np.where((((self.table["EMA50"].shift(self.compare_period_long) - self.table["EMA50"])/self.table["EMA50"]) * 100 < -(self.signal_trigger)),
+        signal = np.where((((self.table["EMA5"].shift(self.compare_period_long) - self.table["EMA5"])/self.table["EMA5"]) * 100 < -(self.signal_trigger)),
             -1,
             signal,
         )

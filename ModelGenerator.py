@@ -12,7 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 
 sample_path = "manipulate.csv"
-
+retest = False
 out_put_model = "my_trained_model_1m_normalized.pkl"
 regression_sensitivity = 0.0
 
@@ -36,8 +36,12 @@ def GenerateModel(train_data, test_data):
     test_data_transform = scaler.fit_transform(test_data_manager.ExportData())
 
     # Train logistic regression model
-    model = LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=1000)
-    model.fit(train_data_trasform, train_data_output)
+    if (retest):
+        with open(out_put_model, 'rb') as file:
+            model = pickle.load(file)
+    else:
+        model = LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=1000)
+        model.fit(train_data_trasform, train_data_output)
 
     # Evaluate model
     y_pred = model.predict(test_data_transform)
@@ -47,10 +51,12 @@ def GenerateModel(train_data, test_data):
 
     test_data_manager.UpdatePrediction(y_pred, y_pred_proba)
     
-    output = test_data_manager.table.iloc[-5000:, :]
+    output = test_data_manager.table.iloc[-1500:, :]
     output.to_csv(sample_path, sep=",")
-    with open(out_put_model, 'wb') as file:
-        pickle.dump(model, file)
+
+    if (not retest):
+        with open(out_put_model, 'wb') as file:
+            pickle.dump(model, file)
 
     # ======================== generating LSTM Model ========================
     features = train_data[IC.input_to_model].values

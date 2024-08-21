@@ -88,12 +88,12 @@ class MT_trade_manager:
             return True
         return False
 
-    def check_for_trade(self, pred, pred_proba, offset, close, ema200):
+    def check_for_trade(self, pred, pred_proba, offset, close, ema5):
         infor = MT5.symbol_info_tick(self.trading_symbol)
         buy_price = infor.ask
         sell_price = infor.bid
         self.spread = buy_price - sell_price
-        if offset < 1.7:  #take trade only when ATR >= 2 dollar
+        if offset < 1.2:  #take trade only when ATR >= 2 dollar
             return {"result" : False, "message" : f"Small ATR {offset:.3f} skip trade"}
 
         if (self.spread > offset):
@@ -105,8 +105,8 @@ class MT_trade_manager:
         neutral_rate = '|'.join([f"{x:.3f}" for x in list(pred_proba[-10:][:, 1])])
         sell_rate = '|'.join([f"{x:.3f}" for x in list(pred_proba[-10:][:, 0])])
         if (self.validate_buy(pred)):
-            if (close < ema200):
-                return {"result" : False, "message" : f"Enter buy but close price [{close}] < ema200 [{ema200}]"}
+            if (close < ema5):
+                return {"result" : False, "message" : f"Enter buy but close price [{close}] < ema5 [{ema5}]"}
             self.request_buy["price"] = buy_price
             self.request_buy["sl"] = buy_price - (1*guard_band) # 2 dollar please
             self.request_buy["tp"] = buy_price + (1.5*guard_band)
@@ -118,8 +118,8 @@ class MT_trade_manager:
             return {"result" : True, "message" : {"ID" : result.order, "Status" : "Open","Type": "Buy", "Detail" : self.request_buy, "Buy_rate" : {buy_rate}, "Neutral_rate" : {neutral_rate}, "Sell_rate" : {sell_rate}}}
 
         elif (self.validate_sell(pred)):
-            if (close > ema200):
-                return {"result" : False, "message" : f"Enter buy but close price [{close}] > ema200 [{ema200}]"}
+            if (close > ema5):
+                return {"result" : False, "message" : f"Enter buy but close price [{close}] > ema5 [{ema5}]"}
             self.request_sell["price"] = sell_price
             self.request_sell["sl"] = sell_price + (1*guard_band) # 2 dollar please
             self.request_sell["tp"] = sell_price - (1.5*guard_band)

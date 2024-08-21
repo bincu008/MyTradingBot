@@ -32,7 +32,7 @@ if __name__ == "__main__":
     noww = datetime.now(utc_time) + timedelta(hours=3)
     date_ = noww - timedelta(days =5)
     date_from = date_.replace() #(hour=0, minute=0, second=0, microsecond=0)
-    date_to = noww - timedelta(days =1) 
+    date_to = noww
     
     date_from_train = noww - timedelta(days = 92)
     date_to_train = noww - timedelta(days = 32)
@@ -85,7 +85,7 @@ if __name__ == "__main__":
             #print(txt)
         
             if (trade_manager.verify_order_status(my_pos, history_order)):#((len(my_pos) == 0) and (flag == False)):
-                result = trade_manager.check_for_trade(pred, pred_proba, data_manager.table.iloc[-1]['ATR'], data_manager.table.iloc[-1]['close'], data_manager.table.iloc[-1]['EMA200'])
+                result = trade_manager.check_for_trade(pred, pred_proba, data_manager.table.iloc[-1]['ATR'], data_manager.table.iloc[-1]['close'], data_manager.table.iloc[-1]['EMA5'])
                 log_list.append(result["message"])
                 if (result["result"]):
                     time.sleep(trade_waiting_time)
