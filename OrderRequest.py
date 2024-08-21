@@ -119,7 +119,7 @@ class MT_trade_manager:
 
         elif (self.validate_sell(pred)):
             if (close > ema5):
-                return {"result" : False, "message" : f"Enter buy but close price [{close}] > ema5 [{ema5}]"}
+                return {"result" : False, "message" : f"Enter sell but close price [{close}] > ema5 [{ema5}]"}
             self.request_sell["price"] = sell_price
             self.request_sell["sl"] = sell_price + (1*guard_band) # 2 dollar please
             self.request_sell["tp"] = sell_price - (1.5*guard_band)
