@@ -1,0 +1,38 @@
+name: Trigger runs
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Choose action'
+        required: true
+        default: 'start'
+        type: choice
+        options:
+          - start
+          - stop
+
+jobs:
+  start:
+    if: github.event.inputs.action == 'start'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Fetch updates from main branch
+        run: git fetch origin master
+
+      - name: Pull latest changes
+        run: git pull origin master
+
+      - name: Run Python script
+        run: py main.py
+
+  stop:
+    if: github.event.inputs.action == 'stop'
+    runs-on: self-hosted
+    steps:
+      - name: Stop Python script
+        run: |
+          pkill -f main.py || echo "No running script found"
