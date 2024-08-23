@@ -1,4 +1,4 @@
-name: Trigger runs
+name: Manage Python Script
 
 on:
   workflow_dispatch:
@@ -12,27 +12,39 @@ on:
           - start
           - stop
 
+  schedule:
+    - cron: "0 23 * * 1-5"  # Schedule to run at 6 AM UTC+7 (11 PM UTC the previous day) from Monday to Friday
+    - cron: "0 20 * * 1-5"  # Schedule to run at 3 AM UTC+7 (8 PM UTC the previous day) from Monday to Friday
+
 jobs:
   start:
-    if: github.event.inputs.action == 'start'
+    if: github.event.inputs.action == 'start' || (github.event_name == 'schedule' && github.event.schedule == '0 23 * * 1-5')
     runs-on: self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Fetch updates from main branch
-        run: git fetch origin master
+        run: |
+          echo "Fetching updates from main branch..."
+          git fetch origin master
 
       - name: Pull latest changes
-        run: git pull origin master
+        run: |
+          echo "Pulling latest changes..."
+          git pull origin master
 
       - name: Run Python script
-        run: py main.py
+        run: |
+          echo "Running Python script..."
+          py main.py
+        continue-on-error: true  # Ensure the script runs even if there are errors
 
   stop:
-    if: github.event.inputs.action == 'stop'
+    if: github.event.inputs.action == 'stop' || (github.event_name == 'schedule' && github.event.schedule == '0 20 * * 1-5')
     runs-on: self-hosted
     steps:
       - name: Stop Python script
         run: |
+          echo "Stopping Python script..."
           pkill -f main.py || echo "No running script found"
