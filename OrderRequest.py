@@ -14,6 +14,7 @@ class MT_trade_manager:
         self.price = 0.0
         self.spread = 0.0
         self.order_taken = []
+        self.penalty = False
         
         self.now = (datetime.now(pytz.timezone('UTC')) + timedelta(hours=7)).strftime("%H_%M_%S-%d_%m_%Y")
         self.log_file = "position_taken_session_" + self.now + ".csv"
@@ -59,6 +60,7 @@ class MT_trade_manager:
                 for order in history_order:
                     if (order.position_id == self.order_taken[i]["ID"] and "sl" in order.comment and self.order_taken[i]["Status"] == "Open"):
                         self.order_taken[i]["Status"] = "Lose"
+                        self.penalty = True
                         #Time,Position ID,Type,Price,TP,SL,Buy Rate,Neutral Rate,Sell Rate,Result
                         file = open(self.log_file, "a")  # append mode
                         file.write(f"{self.now},{self.order_taken[i]['ID']},{self.order_taken[i]['Type']},{self.order_taken[i]['Detail']['price']},{self.order_taken[i]['Detail']['tp']},{self.order_taken[i]['Detail']['sl']},{self.order_taken[i]['Buy_rate']},{self.order_taken[i]['Neutral_rate']},{self.order_taken[i]['Sell_rate']},Lose\n")
@@ -72,29 +74,47 @@ class MT_trade_manager:
         if (len(my_pos) > 0):
             return False
         if (len(self.order_taken) > 2):
-            if (self.order_taken[-1]["Status"] == "Lose" and self.order_taken[-2]["Status"] == "Lose"):
+            if (self.order_taken[-1]["Status"] == "Lose" and self.order_taken[-2]["Status"] == "Lose" and self.penalty == True):
                 print("2 losing streak, penalty 10m")
+                self.penalty = False
                 time.sleep(600)
                 #return True
         return True
 
-    def validate_buy(self, pred):
+    def validate_buy(self, pred, pred_proba):
         if ((pred[-1] == 1) and (list(pred[-5:]).count(1) > 2)):
+            if (pred_proba[-2, 2] < pred_proba[-3, 2]):
+                buy_rate = '|'.join([f"{x:.3f}" for x in list(pred_proba[-10:][:, 2])])
+                print(f"Buy probability reduced [{buy_rate}], skip executing")
+                return False
             return True
         return False
 
-    def validate_sell(self, pred):
+    def validate_sell(self, pred, pred_proba):
         if ((pred[-1] == -1) and (list(pred[-5:]).count(-1) > 2)):
+            if (pred_proba[-2, 0] < pred_proba[-3, 0]):
+                sell_rate = '|'.join([f"{x:.3f}" for x in list(pred_proba[-10:][:, 0])])
+                print(f"Sell probability reduced [{sell_rate}], skip executing")
+                return False
             return True
         return False
 
-    def check_for_trade(self, pred, pred_proba, offset, close, ema5):
+    def check_for_trade(self, pred, pred_proba, dataframe):
         infor = MT5.symbol_info_tick(self.trading_symbol)
+        # previous candle
+        offset = dataframe.iloc[-2]['ATR']
+        close = dataframe.iloc[-2]['close']
+        ema10 = dataframe.iloc[-2]['EMA10']
+        adx = dataframe.iloc[-2]['ADX']
+
         buy_price = infor.ask
         sell_price = infor.bid
         self.spread = buy_price - sell_price
         if offset < 1.2:  #take trade only when ATR >= 2 dollar
             return {"result" : False, "message" : f"Small ATR {offset:.3f} skip trade"}
+
+        if adx < 20:  #adx should be > 20 to indicate strong trend
+            return {"result" : False, "message" : f"Small ADX {adx:.3f} skip trade"}
 
         if (self.spread > offset):
             guard_band = 2*self.spread
@@ -104,9 +124,10 @@ class MT_trade_manager:
         buy_rate = '|'.join([f"{x:.3f}" for x in list(pred_proba[-10:][:, 2])])
         neutral_rate = '|'.join([f"{x:.3f}" for x in list(pred_proba[-10:][:, 1])])
         sell_rate = '|'.join([f"{x:.3f}" for x in list(pred_proba[-10:][:, 0])])
-        if (self.validate_buy(pred)):
-            if (close < ema5):
-                return {"result" : False, "message" : f"Enter buy but close price [{close}] < ema5 [{ema5}]"}
+
+        if (self.validate_buy(pred, pred_proba)):
+            if (close < ema10):
+                return {"result" : False, "message" : f"Enter buy but close price [{close}] < ema10 [{ema10}]"}
             self.request_buy["price"] = buy_price
             self.request_buy["sl"] = buy_price - (1*guard_band) # 2 dollar please
             self.request_buy["tp"] = buy_price + (1.5*guard_band)
@@ -117,9 +138,9 @@ class MT_trade_manager:
             print(txt)
             return {"result" : True, "message" : {"ID" : result.order, "Status" : "Open","Type": "Buy", "Detail" : self.request_buy, "Buy_rate" : {buy_rate}, "Neutral_rate" : {neutral_rate}, "Sell_rate" : {sell_rate}}}
 
-        elif (self.validate_sell(pred)):
-            if (close > ema5):
-                return {"result" : False, "message" : f"Enter sell but close price [{close}] > ema5 [{ema5}]"}
+        elif (self.validate_sell(pred, pred_proba)):
+            if (close > ema10):
+                return {"result" : False, "message" : f"Enter sell but close price [{close}] > ema10 [{ema10}]"}
             self.request_sell["price"] = sell_price
             self.request_sell["sl"] = sell_price + (1*guard_band) # 2 dollar please
             self.request_sell["tp"] = sell_price - (1.5*guard_band)

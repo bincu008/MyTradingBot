@@ -17,7 +17,7 @@ one_minute_model = "my_trained_model_1m_normalized.pkl"
 log_file = "log_session_"
 polling_time = 180 #seconds
 suspend_time = 300 #seconds
-trade_waiting_time = 900
+trade_waiting_time = 300
 
 if __name__ == "__main__":
     trade_manager = OR.MT_trade_manager()
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     date_from = date_.replace() #(hour=0, minute=0, second=0, microsecond=0)
     date_to = noww
     
-    date_from_train = noww - timedelta(days = 92)
+    date_from_train = noww - timedelta(days = 100)
     date_to_train = noww - timedelta(days = 32)
     
     log_file = log_file + (noww + timedelta(hours=4)).strftime("%H_%M_%S-%d_%m_%Y") + ".txt"
@@ -80,12 +80,12 @@ if __name__ == "__main__":
             #    flag = False
             trade_sum = trade_manager.trade_summary()
             pred_string = '|'.join([f"{x}" for x in list(pred[-10:])])
-            txt = f"time: {(now + timedelta(hours=4)).strftime('%H_%M_%S-%d_%m_%Y')} ask: {MT5.symbol_info_tick(trade_manager.trading_symbol).ask} bid:{MT5.symbol_info_tick(trade_manager.trading_symbol).bid} prediction: {pred_string} ATR: {data_manager.table.iloc[-1]['ATR']:.3f} win: {trade_sum['win']} lose: {trade_sum['lose']}"
+            txt = f"{(now + timedelta(hours=4)).strftime('%H_%M_%S-%d_%m_%Y')}: ask: {MT5.symbol_info_tick(trade_manager.trading_symbol).ask} bid:{MT5.symbol_info_tick(trade_manager.trading_symbol).bid} prediction: {pred_string} ATR: {data_manager.table.iloc[-1]['ATR']:.3f} win: {trade_sum['win']} lose: {trade_sum['lose']}"
             log_list.append(txt)
             #print(txt)
         
             if (trade_manager.verify_order_status(my_pos, history_order)):#((len(my_pos) == 0) and (flag == False)):
-                result = trade_manager.check_for_trade(pred, pred_proba, data_manager.table.iloc[-1]['ATR'], data_manager.table.iloc[-1]['close'], data_manager.table.iloc[-1]['EMA5'])
+                result = trade_manager.check_for_trade(pred, pred_proba, data_manager.table.tail(50))
                 log_list.append(result["message"])
                 if (result["result"]):
                     time.sleep(trade_waiting_time)
