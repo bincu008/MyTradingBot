@@ -24,8 +24,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Open Terminal
-        run: start 'C:\Program Files\MetaTrader 5\terminal64.exe'
+      #- name: Open Terminal
+      #  run: start 'C:\Program Files\MetaTrader 5\terminal64.exe'
         
       - name: Fetch updates from main branch
         run: |
