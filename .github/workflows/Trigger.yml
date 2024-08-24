@@ -47,4 +47,8 @@ jobs:
       - name: Stop Python script
         run: |
           echo "Stopping Python script..."
-          pkill -f main.py || echo "No running script found"
+          if (Get-Process -Name "python" -ErrorAction SilentlyContinue) {
+            Stop-Process -Name "python"
+          } else {
+            echo "No running script found"
+          }
