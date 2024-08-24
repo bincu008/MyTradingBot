@@ -25,9 +25,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Open Terminal
-        run: |
-          cmd /c start "" script.bat
+      #- name: Open Terminal
+      #  run: |
+      #    cmd /c start "" script.bat
         
       - name: Fetch updates from main branch
         run: |
