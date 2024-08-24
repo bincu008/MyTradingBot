@@ -8,7 +8,7 @@ import IndicatorCalculator as IC
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 from sklearn.preprocessing import MinMaxScaler
-
+import Logger
 
 
 sample_path = "manipulate.csv"
@@ -17,8 +17,6 @@ out_put_model = "my_trained_model_1m_normalized.pkl"
 regression_sensitivity = 0.0
 
 def GenerateModel(train_data, test_data):
-    # Download historical data for XAU/USD (gold)
-   #test_data = yf.download("GC=F", period="1mo", interval="5m")
     test_data_manager = IC.IndicatorTable()
     train_data_manager = IC.IndicatorTable()
 
@@ -52,6 +50,8 @@ def GenerateModel(train_data, test_data):
     test_data_manager.UpdatePrediction(y_pred, y_pred_proba)
     
     output = test_data_manager.table.iloc[-1500:, :]
+    logger = Logger.Logger(sample_path)
+    logger.dump_dataframe(output)
     output.to_csv(sample_path, sep=",")
 
     if (not retest):

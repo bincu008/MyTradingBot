@@ -24,6 +24,7 @@
     <Compile Include="IndicatorCalculator.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Logger.py" />
     <Compile Include="ModelGenerator.py" />
     <Compile Include="main.py" />
     <Compile Include="OrderRequest.py">

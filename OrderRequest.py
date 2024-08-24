@@ -3,6 +3,7 @@ from datetime import datetime
 from datetime import timedelta
 import time
 import pytz
+import Logger
 
 class MT_trade_manager:
     def __init__(self):
@@ -18,9 +19,8 @@ class MT_trade_manager:
         
         self.now = (datetime.now(pytz.timezone('UTC')) + timedelta(hours=7)).strftime("%H_%M_%S-%d_%m_%Y")
         self.log_file = "position_taken_session_" + self.now + ".csv"
-        file = open(self.log_file, "w")  # append mode
-        file.write("Time,Position ID,Type,Price,TP,SL,Buy Rate,Neutral Rate,Sell Rate,Result\n")
-        file.close()
+        self.logger = Logger.Logger(self.log_file)
+        self.logger.write_log("Time,Position ID,Type,Price,TP,SL,Buy Rate,Neutral Rate,Sell Rate,Result")
         self.request_buy = {
         "action": MT5.TRADE_ACTION_DEAL,
         "symbol": self.trading_symbol,
@@ -62,14 +62,11 @@ class MT_trade_manager:
                         self.order_taken[i]["Status"] = "Lose"
                         self.penalty = True
                         #Time,Position ID,Type,Price,TP,SL,Buy Rate,Neutral Rate,Sell Rate,Result
-                        file = open(self.log_file, "a")  # append mode
-                        file.write(f"{self.now},{self.order_taken[i]['ID']},{self.order_taken[i]['Type']},{self.order_taken[i]['Detail']['price']},{self.order_taken[i]['Detail']['tp']},{self.order_taken[i]['Detail']['sl']},{self.order_taken[i]['Buy_rate']},{self.order_taken[i]['Neutral_rate']},{self.order_taken[i]['Sell_rate']},Lose\n")
-                        file.close()
+                        self.logger.write_log(f"{self.now},{self.order_taken[i]['ID']},{self.order_taken[i]['Type']},{self.order_taken[i]['Detail']['price']},{self.order_taken[i]['Detail']['tp']},{self.order_taken[i]['Detail']['sl']},{self.order_taken[i]['Buy_rate']},{self.order_taken[i]['Neutral_rate']},{self.order_taken[i]['Sell_rate']},Lose")
+
                     elif (order.position_id == self.order_taken[i]["ID"] and "tp" in order.comment and self.order_taken[i]["Status"] == "Open"):
                         self.order_taken[i]["Status"] = "Win"
-                        file = open(self.log_file, "a")  # append mode
-                        file.write(f"{self.now},{self.order_taken[i]['ID']},{self.order_taken[i]['Type']},{self.order_taken[i]['Detail']['price']},{self.order_taken[i]['Detail']['tp']},{self.order_taken[i]['Detail']['sl']},{self.order_taken[i]['Buy_rate']},{self.order_taken[i]['Neutral_rate']},{self.order_taken[i]['Sell_rate']},Win\n")
-                        file.close()
+                        self.logger.write_log(f"{self.now},{self.order_taken[i]['ID']},{self.order_taken[i]['Type']},{self.order_taken[i]['Detail']['price']},{self.order_taken[i]['Detail']['tp']},{self.order_taken[i]['Detail']['sl']},{self.order_taken[i]['Buy_rate']},{self.order_taken[i]['Neutral_rate']},{self.order_taken[i]['Sell_rate']},Win")
 
         if (len(my_pos) > 0):
             return False

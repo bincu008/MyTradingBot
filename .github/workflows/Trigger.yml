@@ -24,6 +24,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Open Terminal
+        run: start "C:\Program Files\MetaTrader 5\terminal64.exe"
+        
       - name: Fetch updates from main branch
         run: |
           echo "Fetching updates from main branch..."
@@ -44,11 +47,17 @@ jobs:
     if: github.event.inputs.action == 'stop' || (github.event_name == 'schedule' && github.event.schedule == '0 20 * * 1-5')
     runs-on: self-hosted
     steps:
-      - name: Stop Python script
+      - name: Stop processes
         run: |
           echo "Stopping Python script..."
           if (Get-Process -Name "python" -ErrorAction SilentlyContinue) {
             Stop-Process -Name "python"
           } else {
             echo "No running script found"
+          }
+          echo "Stopping Terminal..."
+          if (Get-Process -Name "terminal64" -ErrorAction SilentlyContinue) {
+            Stop-Process -Name "terminal64"
+          } else {
+            echo "No running terminal64 found"
           }
