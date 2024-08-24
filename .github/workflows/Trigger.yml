@@ -20,13 +20,14 @@ jobs:
   start:
     if: github.event.inputs.action == 'start' || (github.event_name == 'schedule' && github.event.schedule == '0 23 * * 1-5')
     runs-on: self-hosted
+    timeout-minutes: 1200
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Open Terminal
         run: |
-          powershell.exe -Command "Start-Process 'C:\Program Files\MetaTrader 5\terminal64.exe'"
+          script.bat
         
       - name: Fetch updates from main branch
         run: |
@@ -47,6 +48,7 @@ jobs:
   stop:
     if: github.event.inputs.action == 'stop' || (github.event_name == 'schedule' && github.event.schedule == '0 20 * * 1-5')
     runs-on: self-hosted
+    timeout-minutes: 60
     steps:
       - name: Stop processes
         run: |
