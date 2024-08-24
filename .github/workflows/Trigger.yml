@@ -27,7 +27,7 @@ jobs:
 
       - name: Open Terminal
         run: |
-          script.bat
+          cmd /c script.bat
         
       - name: Fetch updates from main branch
         run: |
