@@ -7,10 +7,10 @@ class IndicatorTable:
         pd.options.mode.chained_assignment = None  # default='warn'
         self.curtain = 14
         self.roll_back = 7
-        self.signal_trigger = 0.1 # percentage of price change
+        self.signal_trigger = 0.15 # percentage of price change
         self.quick_trigger = 0.2
-        self.compare_period_long = -12
-        self.compare_period_short = -30
+        self.compare_period_long = 12
+        self.compare_period_short = 5
         self.regression_sensitivity = 0.0
         self.key_token = "none"
         self.input_to_model = ["RSI","ATR","tick_volume","EMA5_10","EMA5_15","EMA5_20",
@@ -171,17 +171,26 @@ class IndicatorTable:
         self.table.loc[:, 'Predict_neut'] = y_pred_proba[:, 1]
         self.table.loc[:, 'Predict_sell'] = y_pred_proba[:, 0]
 
+    # AI generated
     def DataManipulate(self):
         signal = pd.Series(dtype="int")
-        signal = np.where((((self.table["EMA5"].shift(self.compare_period_long) - self.table["EMA5"])/self.table["EMA5"]) * 100 > self.signal_trigger),
-            1,
-            0,
-        )
+    
+        for i in range(len(self.table)):
+            signal_value = 0
+            for j in range(1, self.compare_period_long):
+                shifter_min_1 = min(i + j, self.table.shape[1])
+                a = self.table["EMA5"].iloc[shifter_min_1]
+                b = self.table.shape[1]
+                if ((self.table["EMA5"].iloc[shifter_min_1] - self.table["EMA5"].iloc[i]) / self.table["EMA5"].iloc[i]) * 100 > self.signal_trigger:
+                    if all(self.table["EMA5"].iloc[min(i + k, self.table.shape[0])] > self.table["EMA5"].iloc[i] for k in range(1, min(self.compare_period_short, self.table.shape[0] - i))):
+                        signal_value = 1
+                        break
+                elif ((self.table["EMA5"].iloc[shifter_min_1] - self.table["EMA5"].iloc[i]) / self.table["EMA5"].iloc[i]) * 100 < -self.signal_trigger:
+                    if all(self.table["EMA5"].iloc[min(i + k, self.table.shape[0])] < self.table["EMA5"].iloc[i] for k in range(1, min(self.compare_period_short, self.table.shape[0] - i))):
+                        signal_value = -1
+                        break
+            signal[i] = int(signal_value)
 
-        signal = np.where((((self.table["EMA5"].shift(self.compare_period_long) - self.table["EMA5"])/self.table["EMA5"]) * 100 < -(self.signal_trigger)),
-            -1,
-            signal,
-        )
-
-        self.table.loc[:, 'Signal'] = signal
+        self.table['Signal'] = 0
+        self.table.loc[:, 'Signal'] = signal.astype(int)
         return signal

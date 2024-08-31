@@ -38,7 +38,7 @@ def GenerateModel(refresh_train_data):
     model.fit(train_data_trasform, train_data_output)
 
     # Evaluate model
-    if (refresh_train_data):
+    if (True):
         y_pred = model.predict(test_data_transform)
         accuracy = (y_pred == test_data_output).mean()
         print(f"ACCURACY: {accuracy}")
@@ -46,7 +46,7 @@ def GenerateModel(refresh_train_data):
 
         test_data_manager.UpdatePrediction(y_pred, y_pred_proba)
     
-        output = test_data_manager.table.iloc[-3000:, :]
+        output = test_data_manager.table#.iloc[-3000:, :]
         logger = Logger.Logger(sample_path)
         logger.dump_dataframe(output)
     #output.to_csv(sample_path, sep=",")
