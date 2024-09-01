@@ -5,6 +5,7 @@ import numpy as np
 class IndicatorTable:
     def __init__(self):
         pd.options.mode.chained_assignment = None  # default='warn'
+        self.remove_rows = 200
         self.curtain = 14
         self.roll_back = 7
         self.signal_trigger = 0.15 # percentage of price change
@@ -101,7 +102,12 @@ class IndicatorTable:
         self.table['ADX'] = self.table['DX'].rolling(window=self.curtain).mean()
 
         # adding backward data
-
+        self.AddBackWard(True)
+        
+            #print(self.input_to_model)
+        #return table
+    
+    def AddBackWard(self, enable):
         for i in range(1, self.roll_back + 1):
             ratio = int(np.round((i*i)/2,0))
             key = '_RB_'
@@ -115,17 +121,18 @@ class IndicatorTable:
             #EMA15_20_name = "EMA15_20" + key + str(i)
             slope_name = "Slope_EMA50" + key + str(i)
             #adx_name = "ADX" + key + str(i)
-
-            #self.table[rsi_name] = self.table['RSI'].shift(i*ratio)
-            self.table[volume_name] = self.table['tick_volume'].shift(ratio)
-            self.table[EMA5_10_name] = self.table['EMA5_10'].shift(ratio)
-            #self.table[EMA5_15_name] = self.table['EMA5_15'].shift(i*ratio)
-            #self.table[EMA5_20_name] = self.table['EMA5_20'].shift(i*ratio)
-            self.table[EMA10_15_name] = self.table['EMA10_15'].shift(ratio)
-            self.table[EMA10_20_name] = self.table['EMA10_20'].shift(ratio)
-            #self.table[EMA15_20_name] = self.table['EMA15_20'].shift(i*ratio)
-            self.table[slope_name] = self.table['Slope_EMA50'].shift(ratio)
-            #self.table[adx_name] = self.table['ADX'].shift(i*ratio)
+            
+            if (enable):
+                #self.table[rsi_name] = self.table['RSI'].shift(i*ratio)
+                self.table[volume_name] = self.table['tick_volume'].shift(ratio)
+                self.table[EMA5_10_name] = self.table['EMA5_10'].shift(ratio)
+                #self.table[EMA5_15_name] = self.table['EMA5_15'].shift(i*ratio)
+                #self.table[EMA5_20_name] = self.table['EMA5_20'].shift(i*ratio)
+                self.table[EMA10_15_name] = self.table['EMA10_15'].shift(ratio)
+                self.table[EMA10_20_name] = self.table['EMA10_20'].shift(ratio)
+                #self.table[EMA15_20_name] = self.table['EMA15_20'].shift(i*ratio)
+                self.table[slope_name] = self.table['Slope_EMA50'].shift(ratio)
+                #self.table[adx_name] = self.table['ADX'].shift(i*ratio)
             
             #self.input_to_model.append(rsi_name)
             self.input_to_model.append(volume_name)
@@ -139,12 +146,14 @@ class IndicatorTable:
             #self.input_to_model.append(adx_name)
 
             self.input_to_model = list(set(self.input_to_model))
-            #print(self.input_to_model)
-        # remove first 200 rows, unused
-        self.table = table.iloc[200:, :]
-        #return table
     
+    def ReuseTable(self, table):
+        self.table = table
+        self.AddBackWard(False)
     def ExportData(self):
+        
+        # remove first 200 rows, unused
+        self.table = self.table.iloc[self.remove_rows:, :]
         return self.table[self.input_to_model]
 
     def UpdatePrediction(self, y_pred, y_pred_proba):
@@ -173,24 +182,20 @@ class IndicatorTable:
 
     # AI generated
     def DataManipulate(self):
-        signal = pd.Series(dtype="int")
-    
-        for i in range(len(self.table)):
+        signal = pd.Series(0, dtype="int64", index=self.table.index)
+        for i in range(self.table.shape[0] - self.compare_period_long - self.compare_period_short):
             signal_value = 0
             for j in range(1, self.compare_period_long):
-                shifter_min_1 = min(i + j, self.table.shape[1])
-                a = self.table["EMA5"].iloc[shifter_min_1]
-                b = self.table.shape[1]
+                shifter_min_1 = min(i + j, self.table.shape[0] - 1)
                 if ((self.table["EMA5"].iloc[shifter_min_1] - self.table["EMA5"].iloc[i]) / self.table["EMA5"].iloc[i]) * 100 > self.signal_trigger:
-                    if all(self.table["EMA5"].iloc[min(i + k, self.table.shape[0])] > self.table["EMA5"].iloc[i] for k in range(1, min(self.compare_period_short, self.table.shape[0] - i))):
+                    if all(self.table["EMA5"].iloc[min(i + k, self.table.shape[0] - 1)] > self.table["EMA5"].iloc[i] for k in range(1, min(self.compare_period_short, self.table.shape[0] - i - 1))):
                         signal_value = 1
                         break
                 elif ((self.table["EMA5"].iloc[shifter_min_1] - self.table["EMA5"].iloc[i]) / self.table["EMA5"].iloc[i]) * 100 < -self.signal_trigger:
-                    if all(self.table["EMA5"].iloc[min(i + k, self.table.shape[0])] < self.table["EMA5"].iloc[i] for k in range(1, min(self.compare_period_short, self.table.shape[0] - i))):
+                    if all(self.table["EMA5"].iloc[min(i + k, self.table.shape[0] - 1)] < self.table["EMA5"].iloc[i] for k in range(1, min(self.compare_period_short, self.table.shape[0] - i - 1))):
                         signal_value = -1
                         break
             signal[i] = int(signal_value)
 
-        self.table['Signal'] = 0
-        self.table.loc[:, 'Signal'] = signal.astype(int)
-        return signal
+        self.table['Signal'] = signal
+        return signal[self.remove_rows:]
