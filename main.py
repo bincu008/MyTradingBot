@@ -12,7 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 import OrderRequest as OR
 import Logger
 
-refresh_train_data = False
+refresh_train_data = True
 polling_time = 180 #seconds
 suspend_time = 300 #seconds
 trade_waiting_time = 300

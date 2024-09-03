@@ -1,6 +1,8 @@
 import string
 import pandas as pd
 import numpy as np
+from statsmodels.nonparametric.kernel_regression import KernelReg
+from sklearn.preprocessing import MinMaxScaler
 
 class IndicatorTable:
     def __init__(self):
@@ -10,11 +12,11 @@ class IndicatorTable:
         self.roll_back = 7
         self.signal_trigger = 0.15 # percentage of price change
         self.quick_trigger = 0.2
-        self.compare_period_long = 12
+        self.compare_period_long = 20
         self.compare_period_short = 5
         self.regression_sensitivity = 0.0
         self.key_token = "none"
-        self.input_to_model = ["RSI","ATR","tick_volume","EMA5_10","EMA5_15","EMA5_20",
+        self.input_to_model = ["RSI","ATR","EMA5_10","EMA5_15","EMA5_20",
                                "EMA10_15","EMA10_20","EMA15_20","ADX",
                                "Slope_EMA50"]
     
@@ -100,19 +102,29 @@ class IndicatorTable:
     
         # Calculate the Average Directional Index (ADX)
         self.table['ADX'] = self.table['DX'].rolling(window=self.curtain).mean()
-
+        #scaler = MinMaxScaler()
+        self.table['Smooth_price'] = self.nadaraya_watson_estimator().reshape(-1, 1).flatten()
+        self.table['Smooth_price_upper'] = self.table['Smooth_price'] * 1.0015
+        self.table['Smooth_price_lower'] = self.table['Smooth_price'] * 0.0975
         # adding backward data
         self.AddBackWard(True)
         
             #print(self.input_to_model)
         #return table
-    
+    def nadaraya_watson_estimator(self, bandwidth=10):
+        prices_array = np.array(self.table['close'])
+        x = np.arange(len(prices_array)).reshape(-1, 1)
+        kr = KernelReg(prices_array, x, 'c', 'lc', bw=[bandwidth])
+        smoothed_prices, _ = kr.fit(x)
+        return smoothed_prices
+
     def AddBackWard(self, enable):
         for i in range(1, self.roll_back + 1):
             ratio = int(np.round((i*i)/2,0))
+            ratio = 2 * i
             key = '_RB_'
             #rsi_name = 'RSI' + key + str(i)
-            volume_name = 'tick_volume' + key + str(i)
+            #volume_name = 'tick_volume' + key + str(i)
             EMA5_10_name = "EMA5_10" + key + str(i)
             #EMA5_15_name = "EMA5_15" + key + str(i)
             #EMA5_20_name = "EMA5_20" + key + str(i)
@@ -124,7 +136,7 @@ class IndicatorTable:
             
             if (enable):
                 #self.table[rsi_name] = self.table['RSI'].shift(i*ratio)
-                self.table[volume_name] = self.table['tick_volume'].shift(ratio)
+                #self.table[volume_name] = self.table['tick_volume'].shift(ratio)
                 self.table[EMA5_10_name] = self.table['EMA5_10'].shift(ratio)
                 #self.table[EMA5_15_name] = self.table['EMA5_15'].shift(i*ratio)
                 #self.table[EMA5_20_name] = self.table['EMA5_20'].shift(i*ratio)
@@ -135,7 +147,7 @@ class IndicatorTable:
                 #self.table[adx_name] = self.table['ADX'].shift(i*ratio)
             
             #self.input_to_model.append(rsi_name)
-            self.input_to_model.append(volume_name)
+            #self.input_to_model.append(volume_name)
             self.input_to_model.append(EMA5_10_name)
             #self.input_to_model.append(EMA5_15_name)
             #self.input_to_model.append(EMA5_20_name)
@@ -187,12 +199,12 @@ class IndicatorTable:
             signal_value = 0
             for j in range(1, self.compare_period_long):
                 shifter_min_1 = min(i + j, self.table.shape[0] - 1)
-                if ((self.table["EMA5"].iloc[shifter_min_1] - self.table["EMA5"].iloc[i]) / self.table["EMA5"].iloc[i]) * 100 > self.signal_trigger:
-                    if all(self.table["EMA5"].iloc[min(i + k, self.table.shape[0] - 1)] > self.table["EMA5"].iloc[i] for k in range(1, min(self.compare_period_short, self.table.shape[0] - i - 1))):
+                if ((self.table["EMA10"].iloc[shifter_min_1] - self.table["EMA10"].iloc[i]) / self.table["EMA10"].iloc[i]) * 100 > self.signal_trigger:
+                    if all(self.table["EMA10"].iloc[min(i + k, self.table.shape[0] - 1)] > self.table["EMA10"].iloc[i] for k in range(1, min(self.compare_period_short, self.table.shape[0] - i - 1))):
                         signal_value = 1
                         break
-                elif ((self.table["EMA5"].iloc[shifter_min_1] - self.table["EMA5"].iloc[i]) / self.table["EMA5"].iloc[i]) * 100 < -self.signal_trigger:
-                    if all(self.table["EMA5"].iloc[min(i + k, self.table.shape[0] - 1)] < self.table["EMA5"].iloc[i] for k in range(1, min(self.compare_period_short, self.table.shape[0] - i - 1))):
+                elif ((self.table["EMA10"].iloc[shifter_min_1] - self.table["EMA10"].iloc[i]) / self.table["EMA10"].iloc[i]) * 100 < -self.signal_trigger:
+                    if all(self.table["EMA10"].iloc[min(i + k, self.table.shape[0] - 1)] < self.table["EMA10"].iloc[i] for k in range(1, min(self.compare_period_short, self.table.shape[0] - i - 1))):
                         signal_value = -1
                         break
             signal[i] = int(signal_value)

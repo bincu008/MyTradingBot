@@ -21,7 +21,7 @@ def GenerateModel(refresh_train_data):
     
     test_data_manager = IC.IndicatorTable()
     train_data_manager = IC.IndicatorTable()
-    if (not refresh_train_data):
+    if (refresh_train_data):
         train_data = pd.read_csv(train_data_output_file)
         test_data = pd.read_csv(test_data_output_file)
 
@@ -30,11 +30,6 @@ def GenerateModel(refresh_train_data):
     
         test_data_output = test_data_manager.DataManipulate()
         train_data_output = train_data_manager.DataManipulate()
-    
-        test_processed_logger = Logger.Logger(test_data_processed_output_file)
-        test_processed_logger.dump_dataframe(test_data_manager.table)
-        train_processed_logger = Logger.Logger(train_data_processed_output_file)
-        train_processed_logger.dump_dataframe(train_data_manager.table)
     else:
         test_data_output = pd.read_csv(test_data_processed_output_file)
         train_data_output = pd.read_csv(train_data_processed_output_file)
