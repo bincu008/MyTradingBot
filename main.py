@@ -73,7 +73,7 @@ if __name__ == "__main__":
             history_order = MT5.history_orders_get(now - timedelta(hours=3),now)
             
             trade_sum = trade_manager.trade_summary()
-            pred_string = '|'.join([f"{x}" for x in list(pred[-100:])])
+            pred_string = '|'.join([f"{x}" for x in list(pred[-10:])])
             txt = f"{(now + timedelta(hours=4)).strftime('%H_%M_%S-%d_%m_%Y')}: ask: {MT5.symbol_info_tick(trade_manager.trading_symbol).ask} bid:{MT5.symbol_info_tick(trade_manager.trading_symbol).bid} prediction: {pred_string} ATR: {data_manager.table.iloc[-1]['ATR']:.3f} win: {trade_sum['win']} lose: {trade_sum['lose']}"
             log_list.append(txt)
             #print(txt)
