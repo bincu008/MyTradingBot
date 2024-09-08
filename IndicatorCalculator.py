@@ -41,25 +41,25 @@ class IndicatorTable:
             #key_open = 'open'
 
         # Calculate 15-minute EMA
-        self.table["EMA5"] = self.table[key_close].ewm(span=5).mean()
-        self.table["EMA10"] = self.table[key_close].ewm(span=10).mean()
+        #self.table["EMA5"] = self.table[key_close].ewm(span=5).mean()
+        #self.table["EMA10"] = self.table[key_close].ewm(span=10).mean()
         self.table["EMA15"] = self.table[key_close].ewm(span=15).mean()
-        self.table["EMA20"] = self.table[key_close].ewm(span=20).mean()
-        self.table["EMA30"] = self.table[key_close].ewm(span=30).mean()
+        #self.table["EMA20"] = self.table[key_close].ewm(span=20).mean()
+        #self.table["EMA30"] = self.table[key_close].ewm(span=30).mean()
         self.table["EMA50"] = self.table[key_close].ewm(span=50).mean()
         self.table["EMA100"] = self.table[key_close].ewm(span=100).mean()
-        self.table["Close_EMA50"] = self.table[key_close] - self.table["EMA30"]
-        self.table["Slope_EMA20"] = self.table["EMA20"].rolling(window=self.curtain).apply(self.calculate_slope, raw=True)
+        #self.table["Close_EMA50"] = self.table[key_close] - self.table["EMA30"]
+        #self.table["Slope_EMA20"] = self.table["EMA20"].rolling(window=self.curtain).apply(self.calculate_slope, raw=True)
 
         # EMAs cuts
         #self.table["EMA5_10"] = self.table["EMA5"] - self.table["EMA10"]
         #self.table["EMA5_15"] = self.table["EMA5"] - self.table["EMA15"]
         #self.table["EMA5_20"] = self.table["EMA5"] - self.table["EMA20"]
         #self.table["EMA10_15"] = self.table["EMA10"] - self.table["EMA15"]
-        self.table["EMA10_20"] = self.table["EMA10"] - self.table["EMA30"]
-        self.table["EMA15_20"] = self.table["EMA15"] - self.table["EMA20"]
+        #self.table["EMA10_20"] = self.table["EMA10"] - self.table["EMA30"]
+        #self.table["EMA15_20"] = self.table["EMA15"] - self.table["EMA20"]
         self.table["EMA15_30"] = self.table["EMA15"] - self.table["EMA50"]
-        self.table["EMA20_30"] = self.table["EMA20"] - self.table["EMA30"]
+        #self.table["EMA20_30"] = self.table["EMA20"] - self.table["EMA30"]
 
             # calulateStochastic Oscillator
         self.table['LowestLow'] = self.table[key_low].rolling(window=self.curtain).min()
