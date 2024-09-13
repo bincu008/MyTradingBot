@@ -141,9 +141,9 @@ class MT_trade_manager:
         filterList = ["0|1|0|1", "1|0|1|0"]
         for filt in filterList:
             if filt in rate:
-                return {"result" : False, "message" : "validate_buy [skip - filter short]"}
-            if filt in short_rate:
                 return {"result" : False, "message" : "validate_buy [skip - filter long]"}
+            if filt in short_rate:
+                return {"result" : False, "message" : "validate_buy [skip - filter short]"}
 
         #for i in range (1, 3):
         close_mean = dataframe.tail(3)['close'].mean()
@@ -172,9 +172,9 @@ class MT_trade_manager:
         filterList = ["0|1|0|1", "1|0|1|0"]
         for filt in filterList:
             if filt in rate:
-                return {"result" : False, "message" : "validate_buy [skip - filter short]"}
-            if filt in short_rate:
                 return {"result" : False, "message" : "validate_buy [skip - filter long]"}
+            if filt in short_rate:
+                return {"result" : False, "message" : "validate_buy [skip - filter short]"}
         
         #for i in range (1, 3):
         close_mean = dataframe.tail(3)['close'].mean()
