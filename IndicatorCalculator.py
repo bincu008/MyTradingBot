@@ -8,7 +8,7 @@ class IndicatorTable:
         self.remove_rows = 200
         self.curtain = 14
         self.roll_back = 7
-        self.signal_trigger = 0.0 # percentage of price change
+        self.signal_trigger = 0.05 # percentage of price change
         self.quick_trigger = 0.07
         self.compare_period_long = 20
         self.compare_period_short = 2
