@@ -358,7 +358,7 @@ class MT_trade_manager:
         if self.simulation:
             self.now = now
         else:
-            self.now = (datetime.now(pytz.timezone('UTC')) + timedelta(hours=7)).strftime("%H_%M_%S-%d_%m_%Y")
+            self.now = now
         win = 0
         lose = 0
         for order in self.order_taken:
