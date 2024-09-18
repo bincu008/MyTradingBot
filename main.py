@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     if simulation:
         sim_time_from = (noww - timedelta(days =180)).replace(hour=0, minute=0, second=0, microsecond=0)
-        sim_time_to = (noww - timedelta(days =140)).replace(hour=0, minute=0, second=0, microsecond=0)
+        sim_time_to = (noww - timedelta(days =100)).replace(hour=0, minute=0, second=0, microsecond=0)
         table = pd.DataFrame(MT5.copy_rates_range(trade_manager.trading_symbol, MT5.TIMEFRAME_M3, sim_time_from, sim_time_to))
         simulator = Simulator.Simulator(table, sim_time_from, sim_time_to, 180)
         now = sim_time_from + timedelta(days =31)
@@ -108,7 +108,7 @@ if __name__ == "__main__":
             log_list.append(txt)
             #print(txt)
             
-            verify = trade_manager.verify_order_status(my_pos, history_order, pred[-21:-1], pred_short[-21:-1], simulator)
+            verify = trade_manager.verify_order_status(my_pos, history_order, pred[-21:-1], pred_short[-21:-1], simulator, data_manager.table.iloc[-200:-1])
             log_list.append(verify["message"])
             if (verify["result"]):#((len(my_pos) == 0) and (flag == False)):
                 result = trade_manager.check_for_trade(pred_short[-21:-1], pred_proba[-21:-1], pred[-21:-1], data_manager.table.iloc[-200:-1])
@@ -119,9 +119,9 @@ if __name__ == "__main__":
                 txt = "2 positions available, skip"
                 log_list.append(txt)
                 print(txt)
-        except:
+        except Exception as e:
             if not simulation:
-                txt = f"{now} error while executing code, sleep for {suspend_time}s"
+                txt = f"{now} error while executing code [{e}], sleep for {suspend_time}s"
                 logger.write_log(txt)
                 time.sleep(suspend_time)
         
