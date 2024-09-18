@@ -82,7 +82,7 @@ class MT_trade_manager:
         print(MT5.terminal_info())
         print(f"\n\n===== TRADING SYMBOL [{self.trading_symbol}] =====")
 
-    def verify_order_status(self, my_pos, history_order, pred, pred_short, simulator, table):
+    def verify_order_status(self, my_pos, history_order, pred, pred_short, simulator):
         message = ["verify_order_status"]
         #simulation part only
         if self.simulation:

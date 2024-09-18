@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     if simulation:
         sim_time_from = (noww - timedelta(days =180)).replace(hour=0, minute=0, second=0, microsecond=0)
-        sim_time_to = (noww - timedelta(days =100)).replace(hour=0, minute=0, second=0, microsecond=0)
+        sim_time_to = (noww - timedelta(days =140)).replace(hour=0, minute=0, second=0, microsecond=0)
         table = pd.DataFrame(MT5.copy_rates_range(trade_manager.trading_symbol, MT5.TIMEFRAME_M3, sim_time_from, sim_time_to))
         simulator = Simulator.Simulator(table, sim_time_from, sim_time_to, 180)
         now = sim_time_from + timedelta(days =31)
@@ -93,6 +93,7 @@ if __name__ == "__main__":
             pred = my_model.predict(normalized_data)
             pred_short = my_model_short.predict(normalized_data_short)
             pred_proba = my_model.predict_proba(normalized_data)
+            pred_short_proba = my_model_short.predict_proba(normalized_data_short)
             #data_manager.UpdatePrediction(pred, pred_proba, pred_short)
             my_pos = MT5.positions_get()
             history_order = MT5.history_orders_get(now - timedelta(hours=10),now)
@@ -101,6 +102,17 @@ if __name__ == "__main__":
             trade_sum = trade_manager.trade_summary(now)
             pred_string = '|'.join([f"{x}" for x in list(pred[-21:-1])])
             pred_string_short = '|'.join([f"{x}" for x in list(pred_short[-21:-1])])
+
+            up_rate = '|'.join([f"{x:.3f}" for x in list(pred_proba[-21:-1][:, 1])])
+            down_rate = '|'.join([f"{x:.3f}" for x in list(pred_proba[-21:-1][:, 0])])
+            up_rate_short = '|'.join([f"{x:.3f}" for x in list(pred_short_proba[-21:-1][:, 1])])
+            down_rate_short = '|'.join([f"{x:.3f}" for x in list(pred_short_proba[-21:-1][:, 0])])
+
+            rate_string = f"long_up:{up_rate} long_down {down_rate}"
+            log_list.append(rate_string)
+            rate_string = f"short_up:{up_rate_short} short_down {down_rate_short}"
+            log_list.append(rate_string)
+
             if simulation:
                 txt = f"{now.timestamp()} {(now).strftime('%H_%M_%S-%d_%m_%Y')}: price: {gold_ticks.iloc[-1]['close']} pred: {pred_string} pred_short: {pred_string_short} ATR: {data_manager.table.iloc[-1]['ATR']:.3f} win: {trade_sum['win']} lose: {trade_sum['lose']}"
             else:
@@ -108,7 +120,7 @@ if __name__ == "__main__":
             log_list.append(txt)
             #print(txt)
             
-            verify = trade_manager.verify_order_status(my_pos, history_order, pred[-21:-1], pred_short[-21:-1], simulator, data_manager.table.iloc[-200:-1])
+            verify = trade_manager.verify_order_status(my_pos, history_order, pred[-21:-1], pred_short[-21:-1], simulator)
             log_list.append(verify["message"])
             if (verify["result"]):#((len(my_pos) == 0) and (flag == False)):
                 result = trade_manager.check_for_trade(pred_short[-21:-1], pred_proba[-21:-1], pred[-21:-1], data_manager.table.iloc[-200:-1])
