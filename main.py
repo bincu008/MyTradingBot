@@ -134,8 +134,8 @@ if __name__ == "__main__":
                 print(txt)
         except Exception as e:
             if not simulation:
-                #txt = f"{now} error while executing code [{e}], sleep for {suspend_time}s"
-                #logger.write_log(txt)
+                txt = f"{now} error while executing code [{e}], sleep for {suspend_time}s"
+                logger.write_log(txt)
                 time.sleep(suspend_time)
         
         logger.write_log_list(log_list)
