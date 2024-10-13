@@ -124,7 +124,6 @@ if __name__ == "__main__":
             
             verify = trade_manager.verify_order_status(my_pos, history_order, pred[-21:-1], pred_short[-21:-1], simulator, data_manager.table.iloc[-200:-1])
             log_list.append(verify["message"])
-            a = data_manager.table.iloc[-200:]
             if (verify["result"]):#((len(my_pos) == 0) and (flag == False)):
                 result = trade_manager.check_for_trade(pred_short[-21:-1], pred_proba[-21:-1], pred[-21:-1], data_manager.table.iloc[-200:-1])
                 log_list.append(result["message"])
