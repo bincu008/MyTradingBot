@@ -61,6 +61,7 @@ class IndicatorTable:
         #self.table["EMA10_30"] = self.table["EMA10"] - self.table["EMA30"]
         #self.table["EMA15_20"] = self.table["EMA15"] - self.table["EMA20"]
         self.table["EMA15_30"] = self.table["EMA20"] - self.table["EMA50"]
+        self.table["EMA20_100"] = self.table["EMA50"] - self.table["EMA100"]
         #self.table["EMA20_30"] = self.table["EMA20"] - self.table["EMA30"]
 
             # calulateStochastic Oscillator
@@ -140,34 +141,37 @@ class IndicatorTable:
 
     def AddBackWard(self, enable):
         # [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181]
-        rolling = [8, 13, 21, 34, 55]
+        rolling = [8, 13, 21, 34]
         for i in rolling:
             ratio = i
             key = '_RB_'
             rsi_name = 'RSI' + key + str(i)
             stoch_name = "Stochastic_EMA5" + key + str(i)
-            #rolling_EMA50 = "Rolling_EMA50" + key + str(i)
+            #rolling_EMA50 = "Rolling_EMA20" + key + str(i)
             EMA15_30_name = "EMA15_30" + key + str(i)
+            #EMA20_100_name = "EMA20_100" + key + str(i)
             adx_name = "ADX" + key + str(i)
-            up_name = "close_up_band" + key + str(i)
-            low_name = "close_low_band" + key + str(i)
+            #up_name = "close_up_band" + key + str(i)
+            #low_name = "close_low_band" + key + str(i)
 
             if (enable):
                 self.table[rsi_name] = self.table['RSI'].shift(ratio)
                 self.table[adx_name] = self.table['ADX'].shift(ratio)
                 self.table[stoch_name] = self.table['Stochastic_EMA5'].shift(ratio)
-                #self.table[rolling_EMA50] = (self.table['EMA30'] - self.table['EMA30'].shift(ratio))/self.table['EMA30'].shift(ratio)
+                #self.table[rolling_EMA50] = (self.table['EMA20'] - self.table['EMA20'].shift(ratio))/self.table['EMA20'].shift(ratio)
                 self.table[EMA15_30_name] = self.table['EMA15_30'].shift(ratio)
-                self.table[up_name] = self.table['close_up_band'].shift(ratio)
-                self.table[low_name] = self.table['close_low_band'].shift(ratio)
+                #self.table[EMA20_100_name] = self.table['EMA20_100'].shift(ratio)
+                #self.table[up_name] = self.table['close_up_band'].shift(ratio)
+                #self.table[low_name] = self.table['close_low_band'].shift(ratio)
             
             self.input_to_model.append(rsi_name)
             self.input_to_model.append(adx_name)
             self.input_to_model.append(stoch_name)
             #self.input_to_model.append(rolling_EMA50)
             self.input_to_model.append(EMA15_30_name)
-            self.input_to_model.append(up_name)
-            self.input_to_model.append(low_name)
+            #self.input_to_model.append(EMA20_100_name)
+            #self.input_to_model.append(up_name)
+            #self.input_to_model.append(low_name)
 
         self.input_to_model = list(set(self.input_to_model))
 
@@ -180,18 +184,18 @@ class IndicatorTable:
             rsi_name = 'RSI' + key + str(i)
             stoch_name = "Stochastic_EMA5" + key + str(i)
             rolling_EMA30 = "Rolling_EMA30" + key + str(i)
-            #EMA10_30_name = "EMA5_20" + key + str(i)
+            EMA10_30_name = "EMA20_100" + key + str(i)
             
             if (enable):
                 self.table[rsi_name] = self.table['RSI'].shift(ratio)
                 self.table[stoch_name] = self.table['Stochastic_EMA5'].shift(ratio)
                 self.table[rolling_EMA30] = (self.table['EMA5'] - self.table['EMA5'].shift(ratio))/self.table['EMA5'].shift(ratio)
-                #self.table[EMA10_30_name] = self.table['EMA5_20'].shift(ratio)
+                self.table[EMA10_30_name] = self.table['EMA5_20'].shift(ratio)
             
             self.input_to_model_short.append(rsi_name)
             self.input_to_model_short.append(stoch_name)
             self.input_to_model_short.append(rolling_EMA30)
-            #self.input_to_model_short.append(EMA10_30_name)
+            self.input_to_model_short.append(EMA10_30_name)
 
         self.input_to_model_short = list(set(self.input_to_model_short))
     
