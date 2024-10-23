@@ -4,7 +4,7 @@ import numpy as np
 
 class IndicatorTable:
     def __init__(self):
-        #pd.options.mode.chained_assignment = None  # default='warn'
+        pd.options.mode.chained_assignment = None  # default='warn'
         self.remove_rows = 200
         self.curtain = 14
         self.roll_back = 7
