@@ -14,8 +14,8 @@ import OrderRequest as OR
 import Logger
 import Simulator
 
-refresh_train_data = False
-simulation = False
+refresh_train_data = True
+simulation = True
 
 polling_time = 120 #seconds
 suspend_time = 300 #seconds
@@ -118,7 +118,7 @@ if __name__ == "__main__":
             if simulation:
                 txt = f"{now.timestamp()} {(now).strftime('%H_%M_%S-%d_%m_%Y')}: price: {gold_ticks.iloc[-1]['close']} pred: {pred_string} pred_short: {pred_string_short} ATR: {data_manager.table.iloc[-1]['ATR']:.3f} RSI: {data_manager.table.iloc[-1]['RSI']:.3f} STOCH: {data_manager.table.iloc[-1]['Stochastic_EMA5']:.3f} BandUp: {data_manager.table.iloc[-1]['Upper Band']:.3f} BandDown: {data_manager.table.iloc[-1]['Lower Band']:.3f} Middle: {data_manager.table.iloc[-1]['Middle Band']:.3f}"
             else:
-                txt = f"{(now).strftime('%H_%M_%S-%d_%m_%Y')}: ask: {MT5.symbol_info_tick(trade_manager.trading_symbol).ask} bid:{MT5.symbol_info_tick(trade_manager.trading_symbol).bid} pred: {pred_string} pred_short: {pred_string_short} ATR: {data_manager.table.iloc[-1]['ATR']:.3f} RSI: {data_manager.table.iloc[-1]['RSI']:.3f} STOCH: {data_manager.table.iloc[-1]['Stochastic_EMA5']:.3f} BandUp: {data_manager.table.iloc[-1]['Upper Band']:.3f} BandDown: {data_manager.table.iloc[-1]['Lower Band']:.3f} Middle: {data_manager.table.iloc[-1]['Middle Band']:.3f} win: {trade_sum['win']} lose: {trade_sum['lose']}"
+                txt = f"{now.timestamp()} {(now).strftime('%H_%M_%S-%d_%m_%Y')}: ask: {MT5.symbol_info_tick(trade_manager.trading_symbol).ask} bid:{MT5.symbol_info_tick(trade_manager.trading_symbol).bid} pred: {pred_string} pred_short: {pred_string_short} ATR: {data_manager.table.iloc[-1]['ATR']:.3f} RSI: {data_manager.table.iloc[-1]['RSI']:.3f} STOCH: {data_manager.table.iloc[-1]['Stochastic_EMA5']:.3f} BandUp: {data_manager.table.iloc[-1]['Upper Band']:.3f} BandDown: {data_manager.table.iloc[-1]['Lower Band']:.3f} Middle: {data_manager.table.iloc[-1]['Middle Band']:.3f} win: {trade_sum['win']} lose: {trade_sum['lose']}"
             log_list.append(txt)
             #print(txt)
             

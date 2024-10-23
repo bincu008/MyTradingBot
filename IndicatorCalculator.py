@@ -4,7 +4,7 @@ import numpy as np
 
 class IndicatorTable:
     def __init__(self):
-        #pd.options.mode.chained_assignment = None  # default='warn'
+        pd.options.mode.chained_assignment = None  # default='warn'
         self.remove_rows = 200
         self.curtain = 14
         self.roll_back = 7
@@ -123,6 +123,8 @@ class IndicatorTable:
         # Calculate the upper and lower bands
         self.table['Upper Band'] = self.table['Middle Band'] + (self.table['Standard Deviation'] * 1.5)
         self.table['Lower Band'] = self.table['Middle Band'] - (self.table['Standard Deviation'] * 1.5)
+        self.table['close_up_band'] = self.table['close'] - self.table['Upper Band']
+        self.table['close_low_band'] = self.table['close'] - self.table['Lower Band']
 
         self.AddBackWard(True)
         self.AddBackWard_short(True)
@@ -147,19 +149,25 @@ class IndicatorTable:
             #rolling_EMA50 = "Rolling_EMA50" + key + str(i)
             EMA15_30_name = "EMA15_30" + key + str(i)
             adx_name = "ADX" + key + str(i)
-            
+            up_name = "close_up_band" + key + str(i)
+            low_name = "close_low_band" + key + str(i)
+
             if (enable):
                 self.table[rsi_name] = self.table['RSI'].shift(ratio)
                 self.table[adx_name] = self.table['ADX'].shift(ratio)
                 self.table[stoch_name] = self.table['Stochastic_EMA5'].shift(ratio)
                 #self.table[rolling_EMA50] = (self.table['EMA30'] - self.table['EMA30'].shift(ratio))/self.table['EMA30'].shift(ratio)
                 self.table[EMA15_30_name] = self.table['EMA15_30'].shift(ratio)
+                self.table[up_name] = self.table['close_up_band'].shift(ratio)
+                self.table[low_name] = self.table['close_low_band'].shift(ratio)
             
             self.input_to_model.append(rsi_name)
             self.input_to_model.append(adx_name)
             self.input_to_model.append(stoch_name)
             #self.input_to_model.append(rolling_EMA50)
             self.input_to_model.append(EMA15_30_name)
+            self.input_to_model.append(up_name)
+            self.input_to_model.append(low_name)
 
         self.input_to_model = list(set(self.input_to_model))
 

@@ -201,9 +201,9 @@ class MT_trade_manager:
                                 if (ticks['close'].tail(1).values[0] - self.order_taken[i]['Detail']["price"]) > 2 and self.order_taken[i]["option"] !=  "check" and self.order_taken[i]["option"] !=  "movesl":
                                     self.order_taken[i]["option"] = "check"
 
-                                if self.order_taken[i]["option"] == "check":
-                                    if ticks['low'].tail(1).values[0] < ticks['EMA5'].tail(1).values[0]:
-                                        self.order_taken[i]["option"] = "close"
+                                #if self.order_taken[i]["option"] == "check":
+                                #    if ticks['low'].tail(1).values[0] < ticks['EMA5'].tail(1).values[0]:
+                                #        self.order_taken[i]["option"] = "close"
 
                                 if self.order_taken[i]["option"] == "movesl":
                                    if ticks['low'].tail(2).values[0] < ticks['close'].tail(2).values[1]:
@@ -302,9 +302,9 @@ class MT_trade_manager:
                                 if (self.order_taken[i]['Detail']["price"] - ticks['close'].tail(1).values[0]) > 2 and self.order_taken[i]["option"] != "check" and self.order_taken[i]["option"] !=  "movesl":
                                     self.order_taken[i]["option"] = "check"
 
-                                if self.order_taken[i]["option"] == "check":
-                                    if ticks['close'].tail(1).values[0] > ticks['EMA5'].tail(1).values[0]:
-                                        self.order_taken[i]["option"] = "close"
+                                #if self.order_taken[i]["option"] == "check":
+                                #    if ticks['close'].tail(1).values[0] > ticks['EMA5'].tail(1).values[0]:
+                                #        self.order_taken[i]["option"] = "close"
 
                                 if self.order_taken[i]["option"] == "movesl":
                                     if ticks['high'].tail(2).values[0] > ticks['close'].tail(2).values[1]:
@@ -480,12 +480,12 @@ class MT_trade_manager:
             #    return {"result" : True, "message" : ""}
 
             # reverse 
-            if "1|1" not in short_rate or not short_rate.endswith("1|1"):
-                return {"result" : False, "message" : f"validate_buy [skip - short rate {short_rate} does not contain buy signal]"}
+            #if "1|1" not in short_rate or not short_rate.endswith("1|1"):
+            #    return {"result" : False, "message" : f"validate_buy [skip - short rate {short_rate} does not contain buy signal]"}
 
             #if ("0|1|1" in short_rate and pred_short[-1] == 1):# and (pred_short[-2] == 1)):
             #    return {"result" : True, "message" : ""}   
-            if 40 <= rsi <= 60 and 40 <= stoch <= 60: #> stoch_B2 and rsi < 60:
+            if 30 <= rsi <= 50 and 30 <= stoch <= 50: #> stoch_B2 and rsi < 60:
                 self.buy_toggle_1 = False
                 self.buy_toggle_2 = False
                 self.toggle_counter_buy = 0
@@ -558,13 +558,13 @@ class MT_trade_manager:
             #if ("1|0|0" in short_rate and pred_short[-1] == 0):# and (pred_short[-2] == 0) and (rsi < 40)):
             #    return {"result" : True, "message" : ""}
 
-            if "0|0" not in short_rate or not short_rate.endswith("0|0"):
-                return {"result" : False, "message" : f"validate_buy [skip - short rate {short_rate} does not contain sell signal]"}
+            #if "0|0" not in short_rate or not short_rate.endswith("0|0"):
+            #    return {"result" : False, "message" : f"validate_buy [skip - short rate {short_rate} does not contain sell signal]"}
 
             #if ("1|0|0" in short_rate and pred_short[-1] == 0):# and (pred_short[-2] == 0) and (rsi < 40)):
             #    return {"result" : True, "message" : ""}
 
-            if 40 <= rsi <= 60 and 40 <= stoch <= 60:# and rsi > 40:
+            if 50 <= rsi <= 70 and 50 <= stoch <= 70:# and rsi > 40:
                 self.sell_toggle_1 = False
                 self.sell_toggle_2 = False
                 self.toggle_counter_sell = 0
