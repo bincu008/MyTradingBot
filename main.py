@@ -20,7 +20,7 @@ import tkinter as tk
 from tkinter import ttk
 
 refresh_train_data = False
-simulation = True
+simulation = False
 
 polling_time = 120 #seconds
 suspend_time = 300 #seconds
